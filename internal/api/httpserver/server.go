@@ -14,9 +14,9 @@ func NewRouter(mux chi.Mux, controller controllers.MarketController) chi.Mux {
 		router.Post("/shops", controller.AddShop)
 		router.Put("/shops", controller.EditShop)
 
-		//router.Get("/categories", controller.ListAllCategories)
-		//router.Post("/categories", controller.AddCategory)
-		//router.Put("/categories", controller.EditCategory)
+		router.Get("/categories", controller.ListAllCategories)
+		router.Post("/categories", controller.AddCategory)
+		router.Put("/categories", controller.EditCategory)
 
 	})
 

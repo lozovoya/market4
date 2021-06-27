@@ -46,8 +46,8 @@ func execute(addr string, dsn string) (err error) {
 	ctx := context.Background()
 	pool, err := pgxpool.Connect(ctx, dsn)
 
-	storage := repository.NewStorage(pool)
-	cont := controllers.NewMarketController(*storage)
+	storage := repository.NewMarketRepository(pool)
+	cont := controllers.NewMarketController(storage)
 	router := httpserver.NewRouter(*chi.NewRouter(), cont)
 
 	server := http.Server{

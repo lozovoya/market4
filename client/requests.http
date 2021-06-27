@@ -1,0 +1,50 @@
+
+### добавить магазин
+
+POST http://localhost:9999/api/v1/shops
+Content-Type: application/json
+
+{
+  "name":"тестовый магазин 1",
+  "address":"тестовая улица 1",
+  "workingHours":"8 - 20"
+}
+### редактировать магазин
+
+PUT http://localhost:9999/api/v1/shops
+Content-Type: application/json
+
+{
+  "id":"18",
+  "name":"aaa",
+  "workingHours":"10 - 11",
+  "lon":"43535",
+  "lat":"o8747843"
+}
+
+### получить полный список магазинов
+
+GET http://localhost:9999/api/v1/shops
+
+### добавить категорию
+
+POST http://localhost:9999/api/v1/categories
+Content-Type: application/json
+
+{
+  "name":"петрушки"
+}
+
+### редактировать категорию
+
+PUT http://localhost:9999/api/v1/categories
+Content-Type: application/json
+
+{
+  "id":"3",
+  "name":"фишки"
+}
+
+### получить полный список категорий
+
+GET http://localhost:9999/api/v1/categories

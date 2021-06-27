@@ -9,12 +9,10 @@ type Storage struct {
 	marketRepository MarketRepository
 }
 
-type market struct {
-	storage *Storage
-}
-
-func NewStorage(pool *pgxpool.Pool) *Storage {
-	return &Storage{pool: pool}
+func NewMarketRepository(pool *pgxpool.Pool) MarketRepository {
+	return &Storage{
+		pool: pool,
+	}
 }
 
 func IsEmpty(field string) bool {

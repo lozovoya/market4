@@ -6,8 +6,7 @@ import (
 )
 
 type marketController struct {
-	market  repository.MarketRepository
-	storage repository.Storage
+	repo repository.MarketRepository
 }
 
 type MarketController interface {
@@ -15,19 +14,23 @@ type MarketController interface {
 	AddShop(writer http.ResponseWriter, request *http.Request)
 	EditShop(writer http.ResponseWriter, request *http.Request)
 
-	//ListAllCategories(writer http.ResponseWriter, request *http.Request)
-	//AddCategory(writer http.ResponseWriter, request *http.Request)
-	//EditCategory(writer http.ResponseWriter, request *http.Request)
+	ListAllCategories(writer http.ResponseWriter, request *http.Request)
+	AddCategory(writer http.ResponseWriter, request *http.Request)
+	EditCategory(writer http.ResponseWriter, request *http.Request)
 	//
 	//ListAllProducts(writer http.ResponseWriter, request *http.Request)
 	//AddProduct(writer http.ResponseWriter, request *http.Request)
 	//EditProduct(writer http.ResponseWriter, request *http.Request)
 }
 
-func NewMarketController(storage repository.Storage) MarketController {
-	return &marketController{storage: storage}
+func NewMarketController(repo repository.MarketRepository) MarketController {
+	return &marketController{repo: repo}
 }
 
 func (m *marketController) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	m.ServeHTTP(writer, request)
+}
+
+func IsEmpty(field string) bool {
+	return field == ""
 }

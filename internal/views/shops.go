@@ -1,7 +1,7 @@
 package views
 
 import (
-	"market3/domain/model"
+	"market4/internal/model"
 )
 
 func ShopList(shops []*model.Shop) (*ShopListDTO, error) {

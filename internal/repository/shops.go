@@ -34,13 +34,13 @@ func (s *Storage) ListAllShops(ctx context.Context) ([]*model.Shop, error) {
 	return shops, nil
 }
 
-func (m *Storage) AddShop(ctx context.Context, shop *model.Shop) (int, error) {
+func (s *Storage) AddShop(ctx context.Context, shop *model.Shop) (int, error) {
 	dbReq := "INSERT " +
 		"INTO shops (name, address, lon, lat, working_hours) " +
 		"VALUES ($1, $2, $3, $4, $5) " +
 		"RETURNING id"
 	var id int
-	err := m.pool.QueryRow(ctx,
+	err := s.pool.QueryRow(ctx,
 		dbReq,
 		shop.Name, shop.Address, shop.Lon, shop.Lat, shop.WorkingHours).Scan(&id)
 	if err != nil {
