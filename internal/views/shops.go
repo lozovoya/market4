@@ -16,11 +16,11 @@ func ShopList(shops []*model.Shop) (*ShopListDTO, error) {
 	for _, shop := range shops {
 		var item model.Shop
 
-		item.Id = shop.Id
+		item.ID = shop.ID
 		item.Name = shop.Name
 		item.Address = shop.Address
-		item.Lon = shop.Lon
-		item.Lat = shop.Lat
+		item.LON = shop.LON
+		item.LAT = shop.LAT
 		item.WorkingHours = shop.WorkingHours
 
 		shopList.Items = append(shopList.Items, &item)

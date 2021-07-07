@@ -43,12 +43,22 @@ func main() {
 
 func execute(addr string, dsn string) (err error) {
 
-	ctx := context.Background()
-	pool, err := pgxpool.Connect(ctx, dsn)
+	shopCtx := context.Background()
+	shopPool, err := pgxpool.Connect(shopCtx, dsn)
+	shopRepo := repository.NewShopRepository(shopPool)
+	shopController := controllers.NewShop(shopRepo)
 
-	storage := repository.NewMarketRepository(pool)
-	cont := controllers.NewMarketController(storage)
-	router := httpserver.NewRouter(*chi.NewRouter(), cont)
+	categoryCtx := context.Background()
+	categoryPool, err := pgxpool.Connect(categoryCtx, dsn)
+	categoryRepo := repository.NewCategoryRepository(categoryPool)
+	categoryController := controllers.NewCategory(categoryRepo)
+
+	productCtx := context.Background()
+	productPool, err := pgxpool.Connect(productCtx, dsn)
+	productRepo := repository.NewProductRepository(productPool, categoryRepo, shopRepo)
+	productController := controllers.NewProduct(productRepo)
+
+	router := httpserver.NewRouter(*chi.NewRouter(), shopController, categoryController, productController)
 
 	server := http.Server{
 		Addr:    addr,

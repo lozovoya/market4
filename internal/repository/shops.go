@@ -3,13 +3,36 @@ package repository
 import (
 	"context"
 	"fmt"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
 	"market4/internal/model"
 )
 
-func (s *Storage) ListAllShops(ctx context.Context) ([]*model.Shop, error) {
+type shopRepo struct {
+	pool *pgxpool.Pool
+}
 
-	log.Println("list all shops controller repository")
+func NewShopRepository(pool *pgxpool.Pool) Shop {
+	return &shopRepo{pool: pool}
+}
+
+func (s *shopRepo) IfShopExists(ctx context.Context, shop int) bool {
+
+	dbReq := "SELECT id FROM shops WHERE id=$1"
+	var id = 0
+	err := s.pool.QueryRow(ctx, dbReq, shop).Scan(&id)
+	if err != nil {
+		log.Println(fmt.Errorf("ifShopExists: %w", err))
+		return false
+	}
+	if id != 0 {
+		return true
+	}
+	return false
+}
+
+func (s *shopRepo) ListAllShops(ctx context.Context) ([]*model.Shop, error) {
+
 	dbReq := "SELECT id, name, address, lon, lat, working_hours " +
 		"FROM shops"
 
@@ -23,7 +46,7 @@ func (s *Storage) ListAllShops(ctx context.Context) ([]*model.Shop, error) {
 
 	for rows.Next() {
 		var shop model.Shop
-		err = rows.Scan(&shop.Id, &shop.Name, &shop.Address, &shop.Lon, &shop.Lat, &shop.WorkingHours)
+		err = rows.Scan(&shop.ID, &shop.Name, &shop.Address, &shop.LON, &shop.LAT, &shop.WorkingHours)
 		if err != nil {
 			log.Println(err)
 			return shops, fmt.Errorf("ListAllShops: %w", err)
@@ -34,7 +57,7 @@ func (s *Storage) ListAllShops(ctx context.Context) ([]*model.Shop, error) {
 	return shops, nil
 }
 
-func (s *Storage) AddShop(ctx context.Context, shop *model.Shop) (int, error) {
+func (s *shopRepo) AddShop(ctx context.Context, shop *model.Shop) (int, error) {
 	dbReq := "INSERT " +
 		"INTO shops (name, address, lon, lat, working_hours) " +
 		"VALUES ($1, $2, $3, $4, $5) " +
@@ -42,7 +65,7 @@ func (s *Storage) AddShop(ctx context.Context, shop *model.Shop) (int, error) {
 	var id int
 	err := s.pool.QueryRow(ctx,
 		dbReq,
-		shop.Name, shop.Address, shop.Lon, shop.Lat, shop.WorkingHours).Scan(&id)
+		shop.Name, shop.Address, shop.LON, shop.LAT, shop.WorkingHours).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("AddShop: %w", err)
 	}
@@ -51,7 +74,7 @@ func (s *Storage) AddShop(ctx context.Context, shop *model.Shop) (int, error) {
 	return id, nil
 }
 
-func (s *Storage) EditShop(ctx context.Context, shop *model.Shop) error {
+func (s *shopRepo) EditShop(ctx context.Context, shop *model.Shop) error {
 	var dbReq = "UPDATE shops SET "
 
 	if !IsEmpty(shop.Name) {
@@ -62,24 +85,24 @@ func (s *Storage) EditShop(ctx context.Context, shop *model.Shop) error {
 		dbReq = fmt.Sprintf("%s address = '%s',", dbReq, shop.Address)
 	}
 
-	if !IsEmpty(shop.Lon) {
-		dbReq = fmt.Sprintf("%s lon = '%s',", dbReq, shop.Lon)
+	if !IsEmpty(shop.LON) {
+		dbReq = fmt.Sprintf("%s lon = '%s',", dbReq, shop.LON)
 	}
 
-	if !IsEmpty(shop.Lat) {
-		dbReq = fmt.Sprintf("%s lat = '%s',", dbReq, shop.Lat)
+	if !IsEmpty(shop.LAT) {
+		dbReq = fmt.Sprintf("%s lat = '%s',", dbReq, shop.LAT)
 	}
 
 	if !IsEmpty(shop.WorkingHours) {
 		dbReq = fmt.Sprintf("%s working_hours = '%s',", dbReq, shop.WorkingHours)
 	}
 
-	dbReq = fmt.Sprintf("%s updated = CURRENT_TIMESTAMP WHERE id = %d", dbReq, shop.Id)
+	dbReq = fmt.Sprintf("%s updated = CURRENT_TIMESTAMP WHERE id = %d", dbReq, shop.ID)
 	_, err := s.pool.Exec(ctx, dbReq)
 	if err != nil {
 		return fmt.Errorf("UpdateShopParameter: %w", err)
 	}
 
-	log.Printf("shop %d is updated", shop.Id)
+	log.Printf("shop %d is updated", shop.ID)
 	return nil
 }

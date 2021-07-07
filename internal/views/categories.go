@@ -15,9 +15,9 @@ func CategoriesList(categories []*model.Category) (*CategoriesListDTO, error) {
 	for _, category := range categories {
 		var item model.Category
 
-		item.Id = category.Id
+		item.ID = category.ID
 		item.Name = category.Name
-		item.Uri_name = category.Uri_name
+		item.URI_name = category.URI_name
 
 		categoriesList.Items = append(categoriesList.Items, &item)
 	}

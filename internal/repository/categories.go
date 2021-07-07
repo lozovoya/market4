@@ -3,16 +3,40 @@ package repository
 import (
 	"context"
 	"fmt"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
 	"market4/internal/model"
 )
 
-func (s *Storage) ListAllCategories(ctx context.Context) ([]*model.Category, error) {
+type categoryRepo struct {
+	pool *pgxpool.Pool
+}
+
+func NewCategoryRepository(pool *pgxpool.Pool) Category {
+	return &categoryRepo{pool: pool}
+}
+
+func (c *categoryRepo) IfCategoryExists(ctx context.Context, category int) bool {
+
+	dbReq := "SELECT id FROM categories WHERE id=$1"
+	var id = 0
+	err := c.pool.QueryRow(ctx, dbReq, category).Scan(&id)
+	if err != nil {
+		log.Println(fmt.Errorf("ifCategoryExists: %w", err))
+		return false
+	}
+	if id != 0 {
+		return true
+	}
+	return false
+}
+
+func (c *categoryRepo) ListAllCategories(ctx context.Context) ([]*model.Category, error) {
 	categories := make([]*model.Category, 0)
 
 	dbReq := "SELECT id, name, uri_name " +
 		"FROM categories"
-	rows, err := s.pool.Query(ctx, dbReq)
+	rows, err := c.pool.Query(ctx, dbReq)
 	if err != nil {
 		return categories, fmt.Errorf("ListAllCategories: %w", err)
 	}
@@ -20,7 +44,7 @@ func (s *Storage) ListAllCategories(ctx context.Context) ([]*model.Category, err
 
 	for rows.Next() {
 		var category model.Category
-		rows.Scan(&category.Id, &category.Name, &category.Uri_name)
+		rows.Scan(&category.ID, &category.Name, &category.URI_name)
 		if err != nil {
 			log.Println(err)
 			return categories, fmt.Errorf("ListAllCategories: %w", err)
@@ -31,13 +55,13 @@ func (s *Storage) ListAllCategories(ctx context.Context) ([]*model.Category, err
 	return categories, nil
 }
 
-func (s *Storage) AddCategory(ctx context.Context, category *model.Category) (int, error) {
+func (c *categoryRepo) AddCategory(ctx context.Context, category *model.Category) (int, error) {
 
 	dbReq := "INSERT INTO categories (name) " +
 		"VALUES ($1) " +
 		"RETURNING id"
 	var id int
-	err := s.pool.QueryRow(ctx, dbReq, category.Name).Scan(&id)
+	err := c.pool.QueryRow(ctx, dbReq, category.Name).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("AddCategory: %w", err)
 	}
@@ -46,7 +70,7 @@ func (s *Storage) AddCategory(ctx context.Context, category *model.Category) (in
 		"SET uri_name = $1 " +
 		"WHERE id = $2"
 	uri_name := fmt.Sprintf("%s-%d", category.Name, id)
-	_, err = s.pool.Exec(ctx, dbReq, uri_name, id)
+	_, err = c.pool.Exec(ctx, dbReq, uri_name, id)
 	if err != nil {
 		return 0, fmt.Errorf("AddCategory: %w", err)
 	}
@@ -55,16 +79,12 @@ func (s *Storage) AddCategory(ctx context.Context, category *model.Category) (in
 	return id, nil
 }
 
-func (s *Storage) EditCategory(ctx context.Context, category *model.Category) error {
-	var dbReq = "UPDATE categories SET "
+func (c *categoryRepo) EditCategory(ctx context.Context, category *model.Category) error {
 
-	if !IsEmpty(category.Name) {
-		dbReq = fmt.Sprintf("%s name = '%s',", dbReq, category.Name)
-	}
+	dbReq := fmt.Sprintf("UPDATE categories SET name = '%s', uri_name = '%s-%d', updated = CURRENT_TIMESTAMP WHERE id = %d",
+		category.Name, category.Name, category.ID, category.ID)
 
-	dbReq = fmt.Sprintf("%s uri_name = '%s-%d', updated = CURRENT_TIMESTAMP WHERE id = %d", dbReq, category.Name, category.Id, category.Id)
-
-	_, err := s.pool.Exec(ctx, dbReq)
+	_, err := c.pool.Exec(ctx, dbReq)
 	if err != nil {
 		return fmt.Errorf("UpdateCategoryParameter: %w", err)
 	}
