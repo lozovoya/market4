@@ -29,4 +29,5 @@ type Product interface {
 type Price interface {
 	AddPrice(ctx context.Context, p *model.Price, productID string) (int, error)
 	EditPrice(ctx context.Context, p *model.Price, productID string) (*model.Price, error)
+	ListAllPrices(ctx context.Context) ([]*model.Price, error)
 }

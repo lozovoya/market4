@@ -28,16 +28,22 @@ func (c *Category) ListAllCategories(writer http.ResponseWriter, request *http.R
 
 	categories, err := c.categoryRepo.ListAllCategories(request.Context())
 	if err != nil {
-		log.Println(fmt.Errorf("getAllCategories: %w", err))
+		log.Println(fmt.Errorf("ListAllCategories: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
 	categoriesList, err := views.CategoriesList(categories)
-	// TODO
+	if err != nil {
+		log.Println(fmt.Errorf("ListAllCategories: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
 
 	writer.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(writer).Encode(categoriesList)
-	//TODO
+	if err != nil {
+		log.Println(fmt.Errorf("ListAllCategories: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
 }
 
 func (c *Category) AddCategory(writer http.ResponseWriter, request *http.Request) {

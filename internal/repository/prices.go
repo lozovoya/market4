@@ -59,3 +59,24 @@ func (price *priceRepo) EditPrice(ctx context.Context, p *model.Price, productID
 	log.Printf("Price for %s is updated", productID)
 	return &result, nil
 }
+
+func (price *priceRepo) ListAllPrices(ctx context.Context) ([]*model.Price, error) {
+	prices := make([]*model.Price, 0)
+
+	dbReq := "SELECT id, sale_price, factory_price, discount_price, is_active " +
+		"FROM prices"
+	rows, err := price.pool.Query(ctx, dbReq)
+	if err != nil {
+		return prices, fmt.Errorf("ListAllPrices: %w", err)
+	}
+	for rows.Next() {
+		var price model.Price
+		err = rows.Scan(&price.ID, &price.SalePrice, &price.FactoryPrice, &price.DiscountPrice, &price.IsActive)
+		if err != nil {
+			return prices, fmt.Errorf("ListAllPrices: %w", err)
+		}
+
+		prices = append(prices, &price)
+	}
+	return prices, nil
+}

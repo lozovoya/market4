@@ -44,7 +44,7 @@ func (c *categoryRepo) ListAllCategories(ctx context.Context) ([]*model.Category
 
 	for rows.Next() {
 		var category model.Category
-		rows.Scan(&category.ID, &category.Name, &category.URI_name)
+		err = rows.Scan(&category.ID, &category.Name, &category.URI_name)
 		if err != nil {
 			log.Println(err)
 			return categories, fmt.Errorf("ListAllCategories: %w", err)

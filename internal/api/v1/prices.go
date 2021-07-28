@@ -89,3 +89,25 @@ func (price *Price) EditPrice(writer http.ResponseWriter, request *http.Request)
 	}
 
 }
+
+func (price *Price) ListAllPrices(writer http.ResponseWriter, request *http.Request) {
+	prices, err := price.priceRepo.ListAllPrices(request.Context())
+	if err != nil {
+		log.Println(fmt.Errorf("ListAllPrices: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	priceList, err := views.PricesList(prices)
+	if err != nil {
+		log.Println(fmt.Errorf("ListAllPrices: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(writer).Encode(priceList)
+	if err != nil {
+		log.Println(fmt.Errorf("ListAllPrices: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+}
