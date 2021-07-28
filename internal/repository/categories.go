@@ -22,7 +22,7 @@ func (c *categoryRepo) IfCategoryExists(ctx context.Context, category int) bool 
 	var id = 0
 	err := c.pool.QueryRow(ctx, dbReq, category).Scan(&id)
 	if err != nil {
-		log.Println(fmt.Errorf("ifCategoryExists: %w", err))
+		log.Println(fmt.Errorf("IfCategoryExists: %w", err))
 		return false
 	}
 	if id != 0 {

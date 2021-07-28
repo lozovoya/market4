@@ -11,7 +11,8 @@ func NewRouter(
 	mux chi.Mux,
 	shopController *v1.Shop,
 	categoryController *v1.Category,
-	productController *v1.Product) chi.Mux {
+	productController *v1.Product,
+	priceController *v1.Price) chi.Mux {
 
 	mux.Use(middleware.Logger)
 	mux.Route("/api/v1", func(router chi.Router) {
@@ -24,6 +25,9 @@ func NewRouter(
 		router.Put("/categories", categoryController.EditCategory)
 
 		router.Post("/products", productController.AddProduct)
+		router.Put("/products", productController.EditProduct)
+
+		router.Post("/prices", priceController.AddPrice)
 
 	})
 

@@ -58,7 +58,12 @@ func execute(addr string, dsn string) (err error) {
 	productRepo := repository.NewProductRepository(productPool, categoryRepo, shopRepo)
 	productController := controllers.NewProduct(productRepo)
 
-	router := httpserver.NewRouter(*chi.NewRouter(), shopController, categoryController, productController)
+	priceCtx := context.Background()
+	pricePool, err := pgxpool.Connect(priceCtx, dsn)
+	priceRepo := repository.NewPriceRepository(pricePool, productRepo)
+	priceController := controllers.NewPrice(priceRepo)
+
+	router := httpserver.NewRouter(*chi.NewRouter(), shopController, categoryController, productController, priceController)
 
 	server := http.Server{
 		Addr:    addr,

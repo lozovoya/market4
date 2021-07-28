@@ -27,32 +27,33 @@ func NewShop(shopRepo repository.Shop) *Shop {
 	return &Shop{shopRepo: shopRepo}
 }
 
-func (m *Shop) EditShop(writer http.ResponseWriter, request *http.Request) {
+func (s *Shop) EditShop(writer http.ResponseWriter, request *http.Request) {
 	var data *model.Shop
 	err := json.NewDecoder(request.Body).Decode(&data)
-	if err != nil {
-		log.Println(fmt.Errorf("addShop: %w", err))
-		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
-
 	if err != nil {
 		log.Println(fmt.Errorf("editShop: %w", err))
 		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 
-	err = m.shopRepo.EditShop(request.Context(), data)
+	//todo проверить что поле id прислано
+	if err != nil {
+		log.Println(fmt.Errorf("editShop: %w", err))
+		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	err = s.shopRepo.EditShop(request.Context(), data)
 	if err != nil {
 		log.Println(fmt.Errorf("editShop: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 }
 
-func (m *Shop) ListAllShops(writer http.ResponseWriter, request *http.Request) {
+func (s *Shop) ListAllShops(writer http.ResponseWriter, request *http.Request) {
 
 	log.Println("list all shops")
-	shops, err := m.shopRepo.ListAllShops(request.Context())
+	shops, err := s.shopRepo.ListAllShops(request.Context())
 	if err != nil {
 		return
 	}
@@ -62,7 +63,7 @@ func (m *Shop) ListAllShops(writer http.ResponseWriter, request *http.Request) {
 	err = json.NewEncoder(writer).Encode(shopList)
 }
 
-func (m *Shop) AddShop(writer http.ResponseWriter, request *http.Request) {
+func (s *Shop) AddShop(writer http.ResponseWriter, request *http.Request) {
 
 	var data *model.Shop
 	err := json.NewDecoder(request.Body).Decode(&data)
@@ -72,8 +73,7 @@ func (m *Shop) AddShop(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	id, err := m.shopRepo.AddShop(request.Context(), data)
-
+	id, err := s.shopRepo.AddShop(request.Context(), data)
 	if err != nil {
 		log.Println(fmt.Errorf("addShop: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

@@ -32,7 +32,7 @@ CREATE TABLE categories
     updated     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE itemscategory
+CREATE TABLE productcategory
 (
     category_id  BIGINT NOT NULL REFERENCES categories,
     product_id UUID NOT NULL REFERENCES products,
@@ -49,6 +49,13 @@ CREATE TABLE shops
     working_hours   TEXT,
     created         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE productshop
+(
+    shop_id BIGINT NOT NULL REFERENCES shops,
+    product_id UUID NOT NULL REFERENCES products,
+    PRIMARY KEY (shop_id, product_id)
 );
 
 CREATE TABLE presence
