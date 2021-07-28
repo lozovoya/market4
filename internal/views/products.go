@@ -1,13 +1,16 @@
 package views
 
 import (
+	"errors"
+	"fmt"
 	"market4/internal/model"
 )
 
 func ProductsList(products []*model.Product) (*ProductsListDTO, error) {
 
 	if len(products) == 0 {
-		return nil, nil
+		err := errors.New("Product list is empty")
+		return nil, fmt.Errorf("ProductList: %w", err)
 	}
 
 	var productsList ProductsListDTO

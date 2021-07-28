@@ -28,6 +28,7 @@ func NewRouter(
 		router.Put("/products", productController.EditProduct)
 
 		router.Post("/prices", priceController.AddPrice)
+		router.Put("/prices", priceController.EditPrice)
 
 	})
 
