@@ -111,11 +111,44 @@ func (p *productRepo) EditProduct(ctx context.Context, product *model.Product, s
 		return nil, fmt.Errorf("EditProduct: %w", err)
 	}
 
-	//todo сделать изменение магазина и категории товара
-	//if shopID != 0 {
-	//	dbReq = fmt.Sprintf("UPDATE product SET ")
-	//}
+	if shopID != 0 {
+		dbReq = "UPDATE productshop SET shop_id = $1 WHERE product_id = $2"
+		_, err = p.pool.Exec(ctx, dbReq, shopID, result.ID)
+		if err != nil {
+			return &result, fmt.Errorf("EditProduct: %w", err)
+		}
+	}
+
+	if categoryID != 0 {
+		dbReq = "UPDATE productcategory SET category_id = $1 WHERE product_id = $2 "
+		_, err = p.pool.Exec(ctx, dbReq, categoryID, result.ID)
+		if err != nil {
+			return &result, fmt.Errorf("EditProduct: %w", err)
+		}
+	}
 
 	log.Printf("Product %d updated", result.ID)
 	return &result, nil
+}
+
+func (p *productRepo) ListAllProducts(ctx context.Context) ([]*model.Product, error) {
+	products := make([]*model.Product, 0)
+
+	dbReq := "SELECT products.id, products.sku, products.name, products.uri, products.description, products.is_active " +
+		"prices.sale_price, prices.factory_price, prices.discount_price" +
+		"FROM products, prices" +
+		"WHERE products.id = prices.product_id "
+	rows, err := p.pool.Query(ctx, dbReq)
+	if err != nil {
+		return products, fmt.Errorf("ListAllProducts: %w", err)
+	}
+	for rows.Next() {
+		var product model.Product
+		err = rows.Scan(&product.ID, &product.SKU, &product.Name, &product.URI, &product.Description, &product.IsActive)
+		if err != nil {
+			return products, fmt.Errorf("ListAllProducts: %w", err)
+		}
+		products = append(products, &product)
+	}
+	return products, nil
 }

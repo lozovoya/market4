@@ -122,3 +122,24 @@ func (p *Product) EditProduct(writer http.ResponseWriter, request *http.Request)
 	}
 
 }
+
+func (p *Product) ListAllProducts(writer http.ResponseWriter, request *http.Request) {
+	products, err := p.productRepo.ListAllProducts(request.Context())
+	if err != nil {
+		log.Println(fmt.Errorf("ListAllProducts: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	productsList, err := views.ProductsList(products)
+	if err != nil {
+		log.Println(fmt.Errorf("ListAllProducts: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(writer).Encode(productsList)
+	if err != nil {
+		log.Println(fmt.Errorf("ListAllProducts: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+}

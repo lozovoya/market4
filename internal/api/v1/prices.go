@@ -11,6 +11,7 @@ import (
 )
 
 type PriceDTO struct {
+	ID            int    `json:"id,omitempty"`
 	SalePrice     int    `json:"sale_price,string"`
 	FactoryPrice  int    `json:"factory_price,string"`
 	DiscountPrice int    `json:"discount_price,string"`
@@ -65,7 +66,13 @@ func (price *Price) EditPrice(writer http.ResponseWriter, request *http.Request)
 		return
 	}
 
+	if data.ID == 0 {
+		log.Println(fmt.Errorf("EditPrice: id is empty"))
+		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+	}
+
 	var p = model.Price{
+		ID:            data.ID,
 		SalePrice:     data.SalePrice,
 		FactoryPrice:  data.FactoryPrice,
 		DiscountPrice: data.DiscountPrice,
