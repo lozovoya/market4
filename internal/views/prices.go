@@ -22,6 +22,7 @@ func PricesList(prices []*model.Price) (*PricesListDTO, error) {
 		item.FactoryPrice = price.FactoryPrice
 		item.DiscountPrice = price.DiscountPrice
 		item.IsActive = price.IsActive
+		item.ProductID = price.ProductID
 		pricesList.Items = append(pricesList.Items, &item)
 	}
 

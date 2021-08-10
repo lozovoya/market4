@@ -32,6 +32,7 @@ func NewRouter(
 		router.Put("/prices", priceController.EditPrice)
 		router.Get("/prices", priceController.ListAllPrices)
 
+		router.Get("/categories/{categoryID:.+}/products", productController.SearchProductsByCategory)
 	})
 
 	log.Println("new router is activated")

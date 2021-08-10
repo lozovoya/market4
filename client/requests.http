@@ -84,11 +84,11 @@ POST http://localhost:9999/api/v1/prices
 Content-Type: application/json
 
 {
-  "sale_price":"9000",
-  "factory_price": "1000",
-  "discount_price": "0",
+  "sale_price":"1000",
+  "factory_price": "900",
+  "discount_price": "10",
   "is_active": "true",
-  "product_id": "f48e7b56-e0d2-11eb-8ebe-0242ac110002"
+  "product_id": "c6f28496-da77-11eb-b672-0242ac110002"
 }
 
 ### редактировать цену
@@ -96,12 +96,16 @@ PUT http://localhost:9999/api/v1/prices
 Content-Type: application/json
 
 {
-"sale_price":"3000",
-"factory_price": "2000",
-"discount_price": "0",
+"id":"10",
+"sale_price":"1000",
+"factory_price": "900",
+"discount_price": "20",
 "is_active": "true",
-"product_id": "9349ce04-df0b-11eb-8565-0242ac110002"
+"product_id": "c6f28496-da77-11eb-b672-0242ac110002"
 }
 
 ### получить полный список цен
 GET http://localhost:9999/api/v1/prices
+
+### получить список продуктов по категории
+GET http://localhost:9999/api/v1/categories/214fgdg/products

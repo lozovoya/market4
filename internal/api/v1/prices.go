@@ -11,7 +11,7 @@ import (
 )
 
 type PriceDTO struct {
-	ID            int    `json:"id,omitempty"`
+	ID            int    `json:"id,omitempty,string"`
 	SalePrice     int    `json:"sale_price,string"`
 	FactoryPrice  int    `json:"factory_price,string"`
 	DiscountPrice int    `json:"discount_price,string"`
@@ -41,8 +41,9 @@ func (price *Price) AddPrice(writer http.ResponseWriter, request *http.Request) 
 		FactoryPrice:  data.FactoryPrice,
 		DiscountPrice: data.DiscountPrice,
 		IsActive:      data.IsActive,
+		ProductID:     data.ProductID,
 	}
-	id, err := price.priceRepo.AddPrice(request.Context(), &p, data.ProductID)
+	id, err := price.priceRepo.AddPrice(request.Context(), &p)
 	if err != nil {
 		log.Println(fmt.Errorf("AddPrice: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -69,6 +70,7 @@ func (price *Price) EditPrice(writer http.ResponseWriter, request *http.Request)
 	if data.ID == 0 {
 		log.Println(fmt.Errorf("EditPrice: id is empty"))
 		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
 	}
 
 	var p = model.Price{
@@ -77,8 +79,9 @@ func (price *Price) EditPrice(writer http.ResponseWriter, request *http.Request)
 		FactoryPrice:  data.FactoryPrice,
 		DiscountPrice: data.DiscountPrice,
 		IsActive:      data.IsActive,
+		ProductID:     data.ProductID,
 	}
-	editedPrice, err := price.priceRepo.EditPrice(request.Context(), &p, data.ProductID)
+	editedPrice, err := price.priceRepo.EditPrice(request.Context(), &p)
 
 	var priceList = make([]*model.Price, 0)
 	priceList = append(priceList, editedPrice)

@@ -13,11 +13,16 @@ type productRepo struct {
 	pool         *pgxpool.Pool
 	categoryRepo Category
 	shopRepo     Shop
+	priceRepo    Price
 }
 
-func NewProductRepository(pool *pgxpool.Pool, categoryRepo Category, shopRepo Shop) Product {
-	return &productRepo{pool: pool, categoryRepo: categoryRepo, shopRepo: shopRepo}
+func NewProductRepository(pool *pgxpool.Pool, categoryRepo Category, shopRepo Shop, priceRepo Price) Product {
+	return &productRepo{pool: pool, categoryRepo: categoryRepo, shopRepo: shopRepo, priceRepo: priceRepo}
 }
+
+//func NewProductRepository(pool *pgxpool.Pool, categoryRepo Category, shopRepo Shop) Product {
+//		return &productRepo{pool: pool, categoryRepo: categoryRepo, shopRepo: shopRepo}
+//	}
 
 func (p *productRepo) IfProductExists(ctx context.Context, productID string) bool {
 	dbReq := "SELECT id FROM products WHERE id=$1"
@@ -134,10 +139,8 @@ func (p *productRepo) EditProduct(ctx context.Context, product *model.Product, s
 func (p *productRepo) ListAllProducts(ctx context.Context) ([]*model.Product, error) {
 	products := make([]*model.Product, 0)
 
-	dbReq := "SELECT products.id, products.sku, products.name, products.uri, products.description, products.is_active " +
-		"prices.sale_price, prices.factory_price, prices.discount_price" +
-		"FROM products, prices" +
-		"WHERE products.id = prices.product_id "
+	dbReq := "SELECT id, sku, name, uri, description, is_active " +
+		"FROM products "
 	rows, err := p.pool.Query(ctx, dbReq)
 	if err != nil {
 		return products, fmt.Errorf("ListAllProducts: %w", err)
@@ -150,5 +153,30 @@ func (p *productRepo) ListAllProducts(ctx context.Context) ([]*model.Product, er
 		}
 		products = append(products, &product)
 	}
+
 	return products, nil
+}
+
+func (p *productRepo) SearchProductsByCategory(ctx context.Context, category string) ([]*model.Product, error) {
+
+	products := make([]*model.Product, 0)
+
+	dbReq := "SELECT products.id, products.sku, products.name, products.uri, products.description, products.is_active " +
+		"prices.sale_price, prices.factory_price, prices.discount_price" +
+		"FROM products, prices, productcategory" +
+		"WHERE productcategory = $1"
+	rows, err := p.pool.Query(ctx, dbReq, category)
+	if err != nil {
+		return products, fmt.Errorf("ListAllProducts: %w", err)
+	}
+	for rows.Next() {
+		var product model.Product
+		err = rows.Scan(&product.ID, &product.SKU, &product.Name, &product.URI, &product.Description, &product.IsActive)
+		if err != nil {
+			return products, fmt.Errorf("ListAllProducts: %w", err)
+		}
+		products = append(products, &product)
+	}
+	return products, nil
+
 }

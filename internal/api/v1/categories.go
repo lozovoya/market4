@@ -26,6 +26,7 @@ func NewCategory(categoryRepo repository.Category) *Category {
 
 func (c *Category) ListAllCategories(writer http.ResponseWriter, request *http.Request) {
 
+	log.Printf("path: %s", request.RequestURI)
 	categories, err := c.categoryRepo.ListAllCategories(request.Context())
 	if err != nil {
 		log.Println(fmt.Errorf("ListAllCategories: %w", err))

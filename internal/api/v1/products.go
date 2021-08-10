@@ -3,6 +3,7 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/go-chi/chi/v5"
 	"log"
 	"market4/internal/model"
 	"market4/internal/repository"
@@ -11,21 +12,23 @@ import (
 )
 
 type ProductDTO struct {
-	SKU         string `json:"sku"`
-	Name        string `json:"name,omitempty"`
-	Type        string `json:"type,omitempty"`
-	Description string `json:"description,omitempty"`
-	IsActive    bool   `json:"is_active,string,omitempty"`
-	Shop_ID     int    `json:"shop_id,string,omitempty"`
-	Category_ID int    `json:"category_id,string,omitempty"`
+	SKU         string      `json:"sku"`
+	Name        string      `json:"name,omitempty"`
+	Type        string      `json:"type,omitempty"`
+	Description string      `json:"description,omitempty"`
+	IsActive    bool        `json:"is_active,string,omitempty"`
+	Shop_ID     int         `json:"shop_id,string,omitempty"`
+	Category_ID int         `json:"category_id,string,omitempty"`
+	Prices      []*PriceDTO `json:"prices,omitempty"`
 }
 
 type Product struct {
 	productRepo repository.Product
+	priceRepo   repository.Price
 }
 
-func NewProduct(productRepo repository.Product) *Product {
-	return &Product{productRepo: productRepo}
+func NewProduct(productRepo repository.Product, priceRepo repository.Price) *Product {
+	return &Product{productRepo: productRepo, priceRepo: priceRepo}
 }
 
 func (p *Product) AddProduct(writer http.ResponseWriter, request *http.Request) {
@@ -57,16 +60,8 @@ func (p *Product) AddProduct(writer http.ResponseWriter, request *http.Request) 
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
-	var productList = make([]*model.Product, 0)
-	productList = append(productList, addedProduct)
-	result, err := views.ProductsList(productList)
-	if err != nil {
-		log.Println(fmt.Errorf("editProduct: %w", err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	}
-
 	writer.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(writer).Encode(result)
+	err = json.NewEncoder(writer).Encode(addedProduct)
 	if err != nil {
 		log.Println(fmt.Errorf("addCategory: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -106,16 +101,8 @@ func (p *Product) EditProduct(writer http.ResponseWriter, request *http.Request)
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
-	var productList = make([]*model.Product, 0)
-	productList = append(productList, editedProduct)
-	result, err := views.ProductsList(productList)
-	if err != nil {
-		log.Println(fmt.Errorf("editProduct: %w", err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	}
-
 	writer.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(writer).Encode(result)
+	err = json.NewEncoder(writer).Encode(editedProduct)
 	if err != nil {
 		log.Println(fmt.Errorf("editProduct: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -130,7 +117,13 @@ func (p *Product) ListAllProducts(writer http.ResponseWriter, request *http.Requ
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
-	productsList, err := views.ProductsList(products)
+	prices, err := p.priceRepo.ListAllPrices(request.Context())
+	if err != nil {
+		log.Println(fmt.Errorf("ListAllPrices: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	productsList, err := views.ProductsList(products, prices)
 	if err != nil {
 		log.Println(fmt.Errorf("ListAllProducts: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -142,4 +135,11 @@ func (p *Product) ListAllProducts(writer http.ResponseWriter, request *http.Requ
 		log.Println(fmt.Errorf("ListAllProducts: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
+}
+
+func (p *Product) SearchProductsByCategory(writer http.ResponseWriter, request *http.Request) {
+
+	log.Println("search by categories")
+	log.Printf("values %s", request.RequestURI)
+	log.Printf("values %s", chi.URLParam(request, "categoryID"))
 }
