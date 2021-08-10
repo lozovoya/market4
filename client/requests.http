@@ -70,9 +70,7 @@ Content-Type: application/json
 
 {
   "sku":"2099",
-  "name": "кочка",
-  "is_active": "false",
-  "category_id": "12"
+  "is_active": "true"
 }
 
 ### получить полный список продуктов
@@ -108,4 +106,10 @@ Content-Type: application/json
 GET http://localhost:9999/api/v1/prices
 
 ### получить список продуктов по категории
-GET http://localhost:9999/api/v1/categories/214fgdg/products
+GET http://localhost:9999/api/v1/categories/5/products
+
+### получить продукт по имени
+GET http://localhost:9999/api/v1/search/ножка
+
+### получить список активных продуктов магазина
+GET http://localhost:9999/api/v1/shops/11/products

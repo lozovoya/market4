@@ -9,6 +9,7 @@ import (
 	"market4/internal/repository"
 	"market4/internal/views"
 	"net/http"
+	"strconv"
 )
 
 type ProductDTO struct {
@@ -123,7 +124,7 @@ func (p *Product) ListAllProducts(writer http.ResponseWriter, request *http.Requ
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
-	productsList, err := views.ProductsList(products, prices)
+	productsList, err := views.ProductsListWithPrices(products, prices)
 	if err != nil {
 		log.Println(fmt.Errorf("ListAllProducts: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -139,7 +140,100 @@ func (p *Product) ListAllProducts(writer http.ResponseWriter, request *http.Requ
 
 func (p *Product) SearchProductsByCategory(writer http.ResponseWriter, request *http.Request) {
 
-	log.Println("search by categories")
-	log.Printf("values %s", request.RequestURI)
-	log.Printf("values %s", chi.URLParam(request, "categoryID"))
+	category, err := strconv.Atoi(chi.URLParam(request, "categoryID"))
+	if err != nil {
+		log.Println(fmt.Errorf("SearchProductsByCategory: %w", err))
+		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+	}
+
+	products, err := p.productRepo.SearchProductsByCategory(request.Context(), category)
+	if err != nil {
+		log.Println(fmt.Errorf("SearchProductsByCategory: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	productsList, err := views.ProductsList(products)
+	if err != nil {
+		log.Println(fmt.Errorf("ListAllProducts: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(writer).Encode(productsList)
+	if err != nil {
+		log.Println(fmt.Errorf("ListAllProducts: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+}
+
+func (p *Product) SearchProductByName(writer http.ResponseWriter, request *http.Request) {
+
+	productName := chi.URLParam(request, "product_name")
+	product, err := p.productRepo.SearchProductsByName(request.Context(), productName)
+	if err != nil {
+		log.Println(fmt.Errorf("SearchProductByName: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	price, err := p.priceRepo.SearchPriceByProductID(request.Context(), product.ID)
+	if err != nil {
+		log.Println(fmt.Errorf("SearchProductByName: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	var productList = make([]*model.Product, 0)
+	productList = append(productList, product)
+
+	var priceList = make([]*model.Price, 0)
+	priceList = append(priceList, price)
+
+	result, err := views.ProductsListWithPrices(productList, priceList)
+	if err != nil {
+		log.Println(fmt.Errorf("ListAllProducts: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(writer).Encode(result)
+	if err != nil {
+		log.Println(fmt.Errorf("ListAllProducts: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+}
+
+func (p *Product) SearchActiveProductsOfShop(writer http.ResponseWriter, request *http.Request) {
+
+	shopID, err := strconv.Atoi(chi.URLParam(request, "shopID"))
+	if err != nil {
+		log.Println(fmt.Errorf("SearchActiveProductsOfShop: %w", err))
+		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+	}
+	products, err := p.productRepo.SearchProductsByShop(request.Context(), shopID)
+
+	var prices = make([]*model.Price, 0)
+	for _, product := range products {
+		if product.IsActive {
+			price, err := p.priceRepo.SearchPriceByProductID(request.Context(), product.ID)
+			if err != nil {
+				log.Println(fmt.Errorf("SearchActiveProductsOfShop: %w", err))
+				http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			}
+			prices = append(prices, price)
+		}
+	}
+
+	productsList, err := views.ProductsListWithPrices(products, prices)
+	if err != nil {
+		log.Println(fmt.Errorf("SearchActiveProductsOfShop: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(writer).Encode(productsList)
+	if err != nil {
+		log.Println(fmt.Errorf("SearchActiveProductsOfShop: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
 }

@@ -79,3 +79,21 @@ func (price *priceRepo) ListAllPrices(ctx context.Context) ([]*model.Price, erro
 	}
 	return prices, nil
 }
+
+func (price *priceRepo) SearchPriceByProductID(ctx context.Context, productID string) (*model.Price, error) {
+
+	dbReq := fmt.Sprintf("SELECT id, sale_price, factory_price, discount_price, product_id, is_active FROM prices WHERE product_id = '%s'", productID)
+	var productPrice model.Price
+	err := price.pool.QueryRow(ctx, dbReq).Scan(
+		&productPrice.ID,
+		&productPrice.SalePrice,
+		&productPrice.FactoryPrice,
+		&productPrice.DiscountPrice,
+		&productPrice.ProductID,
+		&productPrice.IsActive)
+	if err != nil {
+		//todo обработать ошибку отсутствия цены
+		return &productPrice, fmt.Errorf("SearchPriceByProductID: %w", err)
+	}
+	return &productPrice, nil
+}

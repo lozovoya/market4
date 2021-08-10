@@ -157,21 +157,22 @@ func (p *productRepo) ListAllProducts(ctx context.Context) ([]*model.Product, er
 	return products, nil
 }
 
-func (p *productRepo) SearchProductsByCategory(ctx context.Context, category string) ([]*model.Product, error) {
+func (p *productRepo) SearchProductsByCategory(ctx context.Context, category int) ([]*model.Product, error) {
 
 	products := make([]*model.Product, 0)
 
-	dbReq := "SELECT products.id, products.sku, products.name, products.uri, products.description, products.is_active " +
-		"prices.sale_price, prices.factory_price, prices.discount_price" +
-		"FROM products, prices, productcategory" +
-		"WHERE productcategory = $1"
+	dbReq := "SELECT products.id, products.name, products.uri " +
+		"FROM products " +
+		"JOIN productcategory " +
+		"ON products.id = productcategory.product_id " +
+		"WHERE productcategory.category_id = $1 "
 	rows, err := p.pool.Query(ctx, dbReq, category)
 	if err != nil {
-		return products, fmt.Errorf("ListAllProducts: %w", err)
+		return products, fmt.Errorf("SearchProductsByCategory: %w", err)
 	}
 	for rows.Next() {
 		var product model.Product
-		err = rows.Scan(&product.ID, &product.SKU, &product.Name, &product.URI, &product.Description, &product.IsActive)
+		err = rows.Scan(&product.ID, &product.Name, &product.URI)
 		if err != nil {
 			return products, fmt.Errorf("ListAllProducts: %w", err)
 		}
@@ -179,4 +180,49 @@ func (p *productRepo) SearchProductsByCategory(ctx context.Context, category str
 	}
 	return products, nil
 
+}
+
+func (p *productRepo) SearchProductsByName(ctx context.Context, productName string) (*model.Product, error) {
+
+	dbReq := "SELECT sku, name, uri, description, id " +
+		"FROM products " +
+		"WHERE name = $1"
+	var product model.Product
+	err := p.pool.QueryRow(ctx, dbReq, productName).Scan(&product.SKU, &product.Name, &product.URI, &product.Description, &product.ID)
+	if err != nil {
+		return &product, fmt.Errorf("SearchProductsByName: %w", err)
+	}
+
+	return &product, nil
+}
+
+func (p *productRepo) SearchProductsByShop(ctx context.Context, shopID int) ([]*model.Product, error) {
+
+	var products = make([]*model.Product, 0)
+	dbReq := "SELECT products.id, products.sku, products.name, products.uri, products.description, products.is_active " +
+		"FROM products " +
+		"JOIN productshop " +
+		"ON products.id = productshop.product_id " +
+		"WHERE productshop.shop_id = $1"
+
+	rows, err := p.pool.Query(ctx, dbReq, shopID)
+	if err != nil {
+		return products, fmt.Errorf("SearchActiveProductsByShop: %w", err)
+	}
+	for rows.Next() {
+		var product model.Product
+		err = rows.Scan(
+			&product.ID,
+			&product.SKU,
+			&product.Name,
+			&product.URI,
+			&product.Description,
+			&product.IsActive,
+		)
+		if err != nil {
+			return products, fmt.Errorf("SearchActiveProductsByShop: %w", err)
+		}
+		products = append(products, &product)
+	}
+	return products, nil
 }

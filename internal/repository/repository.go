@@ -24,10 +24,14 @@ type Product interface {
 	EditProduct(ctx context.Context, p *model.Product, shopId int, categoryId int) (*model.Product, error)
 	ListAllProducts(ctx context.Context) ([]*model.Product, error)
 	IfProductExists(ctx context.Context, productID string) bool
+	SearchProductsByCategory(ctx context.Context, category int) ([]*model.Product, error)
+	SearchProductsByName(ctx context.Context, productName string) (*model.Product, error)
+	SearchProductsByShop(ctx context.Context, shopID int) ([]*model.Product, error)
 }
 
 type Price interface {
 	AddPrice(ctx context.Context, p *model.Price) (int, error)
 	EditPrice(ctx context.Context, p *model.Price) (*model.Price, error)
 	ListAllPrices(ctx context.Context) ([]*model.Price, error)
+	SearchPriceByProductID(ctx context.Context, productID string) (*model.Price, error)
 }
