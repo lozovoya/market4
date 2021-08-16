@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"log"
+	"market4/internal/cache"
 	"market4/internal/model"
 	"market4/internal/repository"
 	"market4/internal/views"
@@ -26,10 +27,11 @@ type ProductDTO struct {
 type Product struct {
 	productRepo repository.Product
 	priceRepo   repository.Price
+	cache       cache.Cache
 }
 
-func NewProduct(productRepo repository.Product, priceRepo repository.Price) *Product {
-	return &Product{productRepo: productRepo, priceRepo: priceRepo}
+func NewProduct(productRepo repository.Product, priceRepo repository.Price, cache cache.Cache) *Product {
+	return &Product{productRepo: productRepo, priceRepo: priceRepo, cache: cache}
 }
 
 func (p *Product) AddProduct(writer http.ResponseWriter, request *http.Request) {
@@ -140,6 +142,16 @@ func (p *Product) ListAllProducts(writer http.ResponseWriter, request *http.Requ
 
 func (p *Product) SearchProductsByCategory(writer http.ResponseWriter, request *http.Request) {
 
+	if productsList, _ := p.cache.FromCache(request.Context(), request.RequestURI); productsList != nil {
+		writer.Header().Set("Content-Type", "application/json")
+		_, err := writer.Write(productsList)
+		if err != nil {
+			log.Println(fmt.Errorf("SearchProductsByCategory: %w", err))
+			http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+		return
+	}
+
 	category, err := strconv.Atoi(chi.URLParam(request, "categoryID"))
 	if err != nil {
 		log.Println(fmt.Errorf("SearchProductsByCategory: %w", err))
@@ -154,19 +166,40 @@ func (p *Product) SearchProductsByCategory(writer http.ResponseWriter, request *
 
 	productsList, err := views.ProductsList(products)
 	if err != nil {
-		log.Println(fmt.Errorf("ListAllProducts: %w", err))
+		log.Println(fmt.Errorf("SearchProductsByCategory: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(writer).Encode(productsList)
+	body, err := json.Marshal(productsList)
 	if err != nil {
-		log.Println(fmt.Errorf("ListAllProducts: %w", err))
+		log.Println(fmt.Errorf("SearchProductsByCategory: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	_, err = writer.Write(body)
+	if err != nil {
+		log.Println(fmt.Errorf("SearchProductsByCategory: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	err = p.cache.ToCache(request.Context(), request.RequestURI, body)
+	if err != nil {
+		log.Println(fmt.Errorf("SearchProductsByCategory: %w", err))
 	}
 }
 
 func (p *Product) SearchProductByName(writer http.ResponseWriter, request *http.Request) {
+
+	if result, _ := p.cache.FromCache(request.Context(), request.RequestURI); result != nil {
+		writer.Header().Set("Content-Type", "application/json")
+		_, err := writer.Write(result)
+		if err != nil {
+			log.Println(fmt.Errorf("SearchProductByName: %w", err))
+			http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+		return
+	}
 
 	productName := chi.URLParam(request, "product_name")
 	product, err := p.productRepo.SearchProductsByName(request.Context(), productName)
@@ -194,10 +227,20 @@ func (p *Product) SearchProductByName(writer http.ResponseWriter, request *http.
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(writer).Encode(result)
+	body, err := json.Marshal(result)
 	if err != nil {
-		log.Println(fmt.Errorf("ListAllProducts: %w", err))
+		log.Println(fmt.Errorf("SearchPriceByProductID: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+	_, err = writer.Write(body)
+	if err != nil {
+		log.Println(fmt.Errorf("SearchPriceByProductID: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	err = p.cache.ToCache(request.Context(), request.RequestURI, body)
+	if err != nil {
+		log.Println(fmt.Errorf("SearchPriceByProductID: %w", err))
 	}
 
 }

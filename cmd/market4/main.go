@@ -7,6 +7,7 @@ import (
 	"log"
 	"market4/internal/api/httpserver"
 	controllers "market4/internal/api/v1"
+	cache2 "market4/internal/cache"
 	"market4/internal/repository"
 	"net"
 	"net/http"
@@ -14,9 +15,10 @@ import (
 )
 
 const (
-	defaultPort = "9999"
-	defaultHost = "0.0.0.0"
-	defaultDSN  = "postgres://app:pass@localhost:5432/marketdb"
+	defaultPort     = "9999"
+	defaultHost     = "0.0.0.0"
+	defaultDSN      = "postgres://app:pass@localhost:5432/marketdb"
+	defaultCacheDSN = "redis://localhost:6379/0"
 )
 
 func main() {
@@ -35,33 +37,53 @@ func main() {
 		dsn = defaultDSN
 	}
 
-	if err := execute(net.JoinHostPort(host, port), dsn); err != nil {
+	cacheDSN, ok := os.LookupEnv("CACHE")
+	if !ok {
+		cacheDSN = defaultCacheDSN
+	}
+
+	if err := execute(net.JoinHostPort(host, port), dsn, cacheDSN); err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
 }
 
-func execute(addr string, dsn string) (err error) {
+func execute(addr string, dsn string, cacheDSN string) (err error) {
+
+	cachePool := cache2.InitCache(cacheDSN)
+	cache := cache2.NewRedisCache(cachePool)
 
 	shopCtx := context.Background()
 	shopPool, err := pgxpool.Connect(shopCtx, dsn)
+	if err != nil {
+		log.Printf("Execute: %w", err)
+	}
 	shopRepo := repository.NewShopRepository(shopPool)
 	shopController := controllers.NewShop(shopRepo)
 
 	categoryCtx := context.Background()
 	categoryPool, err := pgxpool.Connect(categoryCtx, dsn)
+	if err != nil {
+		log.Printf("Execute: %w", err)
+	}
 	categoryRepo := repository.NewCategoryRepository(categoryPool)
 	categoryController := controllers.NewCategory(categoryRepo)
 
 	priceCtx := context.Background()
 	pricePool, err := pgxpool.Connect(priceCtx, dsn)
+	if err != nil {
+		log.Printf("Execute: %w", err)
+	}
 	priceRepo := repository.NewPriceRepository(pricePool)
 	priceController := controllers.NewPrice(priceRepo)
 
 	productCtx := context.Background()
 	productPool, err := pgxpool.Connect(productCtx, dsn)
+	if err != nil {
+		log.Printf("Execute: %w", err)
+	}
 	productRepo := repository.NewProductRepository(productPool, categoryRepo, shopRepo, priceRepo)
-	productController := controllers.NewProduct(productRepo, priceRepo)
+	productController := controllers.NewProduct(productRepo, priceRepo, cache)
 
 	router := httpserver.NewRouter(*chi.NewRouter(),
 		shopController,
