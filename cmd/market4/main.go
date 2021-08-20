@@ -15,29 +15,31 @@ import (
 )
 
 const (
-	defaultPort     = "9999"
-	defaultHost     = "0.0.0.0"
-	defaultDSN      = "postgres://app:pass@localhost:5432/marketdb"
-	defaultCacheDSN = "redis://localhost:6379/0"
+	defaultPort = "9999"
+	defaultHost = "0.0.0.0"
+	//	defaultDSN      = "postgres://app:pass@localhost:5432/marketdb"
+	defaultDSN = "postgres://app:pass@marketdb:5432/marketdb"
+	//	defaultCacheDSN = "redis://localhost:6379/0"
+	defaultCacheDSN = "redis://marketcache:6379/0"
 )
 
 func main() {
-	port, ok := os.LookupEnv("APP_PORT")
+	port, ok := os.LookupEnv("MARKET_PORT")
 	if !ok {
 		port = defaultPort
 	}
 
-	host, ok := os.LookupEnv("APP_HOST")
+	host, ok := os.LookupEnv("MARKET_HOST")
 	if !ok {
 		host = defaultHost
 	}
 
-	dsn, ok := os.LookupEnv("DB")
+	dsn, ok := os.LookupEnv("MARKET_DB")
 	if !ok {
 		dsn = defaultDSN
 	}
 
-	cacheDSN, ok := os.LookupEnv("CACHE")
+	cacheDSN, ok := os.LookupEnv("MARKET_CACHE")
 	if !ok {
 		cacheDSN = defaultCacheDSN
 	}
@@ -57,6 +59,7 @@ func execute(addr string, dsn string, cacheDSN string) (err error) {
 	shopPool, err := pgxpool.Connect(shopCtx, dsn)
 	if err != nil {
 		log.Printf("Execute: %w", err)
+		return err
 	}
 	shopRepo := repository.NewShopRepository(shopPool)
 	shopController := controllers.NewShop(shopRepo)
@@ -65,6 +68,7 @@ func execute(addr string, dsn string, cacheDSN string) (err error) {
 	categoryPool, err := pgxpool.Connect(categoryCtx, dsn)
 	if err != nil {
 		log.Printf("Execute: %w", err)
+		return err
 	}
 	categoryRepo := repository.NewCategoryRepository(categoryPool)
 	categoryController := controllers.NewCategory(categoryRepo)
@@ -73,6 +77,7 @@ func execute(addr string, dsn string, cacheDSN string) (err error) {
 	pricePool, err := pgxpool.Connect(priceCtx, dsn)
 	if err != nil {
 		log.Printf("Execute: %w", err)
+		return err
 	}
 	priceRepo := repository.NewPriceRepository(pricePool)
 	priceController := controllers.NewPrice(priceRepo)
@@ -81,6 +86,7 @@ func execute(addr string, dsn string, cacheDSN string) (err error) {
 	productPool, err := pgxpool.Connect(productCtx, dsn)
 	if err != nil {
 		log.Printf("Execute: %w", err)
+		return err
 	}
 	productRepo := repository.NewProductRepository(productPool, categoryRepo, shopRepo, priceRepo)
 	productController := controllers.NewProduct(productRepo, priceRepo, cache)

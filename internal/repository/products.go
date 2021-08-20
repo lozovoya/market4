@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
 	"market4/internal/model"
+	"strings"
 )
 
 type productRepo struct {
@@ -143,6 +144,9 @@ func (p *productRepo) ListAllProducts(ctx context.Context) ([]*model.Product, er
 		"FROM products "
 	rows, err := p.pool.Query(ctx, dbReq)
 	if err != nil {
+		if strings.Contains(err.Error(), "no rows in result set") {
+			return products, nil
+		}
 		return products, fmt.Errorf("ListAllProducts: %w", err)
 	}
 	for rows.Next() {
@@ -168,6 +172,9 @@ func (p *productRepo) SearchProductsByCategory(ctx context.Context, category int
 		"WHERE productcategory.category_id = $1 "
 	rows, err := p.pool.Query(ctx, dbReq, category)
 	if err != nil {
+		if strings.Contains(err.Error(), "no rows in result set") {
+			return products, nil
+		}
 		return products, fmt.Errorf("SearchProductsByCategory: %w", err)
 	}
 	for rows.Next() {
@@ -190,6 +197,9 @@ func (p *productRepo) SearchProductsByName(ctx context.Context, productName stri
 	var product model.Product
 	err := p.pool.QueryRow(ctx, dbReq, productName).Scan(&product.SKU, &product.Name, &product.URI, &product.Description, &product.ID)
 	if err != nil {
+		if strings.Contains(err.Error(), "no rows in result set") {
+			return &product, nil
+		}
 		return &product, fmt.Errorf("SearchProductsByName: %w", err)
 	}
 
@@ -207,6 +217,9 @@ func (p *productRepo) SearchProductsByShop(ctx context.Context, shopID int) ([]*
 
 	rows, err := p.pool.Query(ctx, dbReq, shopID)
 	if err != nil {
+		if strings.Contains(err.Error(), "no rows in result set") {
+			return products, nil
+		}
 		return products, fmt.Errorf("SearchActiveProductsByShop: %w", err)
 	}
 	for rows.Next() {

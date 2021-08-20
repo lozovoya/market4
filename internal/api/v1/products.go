@@ -206,8 +206,11 @@ func (p *Product) SearchProductByName(writer http.ResponseWriter, request *http.
 	if err != nil {
 		log.Println(fmt.Errorf("SearchProductByName: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
-
+	if product.ID == "" {
+		return
+	}
 	price, err := p.priceRepo.SearchPriceByProductID(request.Context(), product.ID)
 	if err != nil {
 		log.Println(fmt.Errorf("SearchProductByName: %w", err))

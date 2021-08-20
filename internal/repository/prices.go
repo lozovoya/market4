@@ -6,6 +6,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
 	"market4/internal/model"
+	"strings"
 )
 
 type priceRepo struct {
@@ -61,6 +62,9 @@ func (price *priceRepo) ListAllPrices(ctx context.Context) ([]*model.Price, erro
 		"FROM prices"
 	rows, err := price.pool.Query(ctx, dbReq)
 	if err != nil {
+		if strings.Contains(err.Error(), "no rows in result set") {
+			return prices, nil
+		}
 		return prices, fmt.Errorf("ListAllPrices: %w", err)
 	}
 	for rows.Next() {
@@ -92,7 +96,9 @@ func (price *priceRepo) SearchPriceByProductID(ctx context.Context, productID st
 		&productPrice.ProductID,
 		&productPrice.IsActive)
 	if err != nil {
-		//todo обработать ошибку отсутствия цены
+		if strings.Contains(err.Error(), "no rows in result set") {
+			return &productPrice, nil
+		}
 		return &productPrice, fmt.Errorf("SearchPriceByProductID: %w", err)
 	}
 	return &productPrice, nil

@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+const TTL = 30
+
 type apiCache struct {
 	pool *redis.Pool
 }
@@ -37,7 +39,7 @@ func (a *apiCache) ToCache(ctx context.Context, key string, value []byte) (err e
 		}
 	}()
 
-	_, err = redis.DoWithTimeout(conn, time.Millisecond*100, "SET", key, value)
+	_, err = redis.DoWithTimeout(conn, time.Millisecond*100, "SETEX", key, TTL, value)
 	if err != nil {
 		return fmt.Errorf("ToCache: %w", err)
 	}

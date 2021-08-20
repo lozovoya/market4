@@ -6,6 +6,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
 	"market4/internal/model"
+	"strings"
 )
 
 type categoryRepo struct {
@@ -38,6 +39,9 @@ func (c *categoryRepo) ListAllCategories(ctx context.Context) ([]*model.Category
 		"FROM categories"
 	rows, err := c.pool.Query(ctx, dbReq)
 	if err != nil {
+		if strings.Contains(err.Error(), "no rows in result set") {
+			return categories, nil
+		}
 		return categories, fmt.Errorf("ListAllCategories: %w", err)
 	}
 	defer rows.Close()

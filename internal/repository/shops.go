@@ -6,6 +6,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
 	"market4/internal/model"
+	"strings"
 )
 
 type shopRepo struct {
@@ -39,7 +40,9 @@ func (s *shopRepo) ListAllShops(ctx context.Context) ([]*model.Shop, error) {
 	shops := make([]*model.Shop, 0)
 	rows, err := s.pool.Query(ctx, dbReq)
 	if err != nil {
-		log.Println(err)
+		if strings.Contains(err.Error(), "no rows in result set") {
+			return shops, nil
+		}
 		return shops, fmt.Errorf("ListAllShops: %w", err)
 	}
 	defer rows.Close()
