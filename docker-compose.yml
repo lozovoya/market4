@@ -19,8 +19,13 @@ services:
     command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
   market:
     depends_on:
-      - "marketdb"
-    command: ["./wait-for.sh", "-t", "60", "marketdb:5432", "--", "echo", "postgres_is_up"]
+      - marketdb
+    command: sh -c "/wait && /market/market"
+    environment:
+        - WAIT_HOSTS=marketdb:5432
+        - WAIT_HOSTS_TIMEOUT=30
+        - WAIT_SLEEP_INTERVAL=5
+        - WAIT_HOST_CONNECT_TIMEOUT=30
     build: .
     ports:
       - 9999:9999
