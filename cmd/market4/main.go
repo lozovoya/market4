@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
@@ -18,9 +19,9 @@ const (
 	defaultPort = "9999"
 	defaultHost = "0.0.0.0"
 	//	defaultDSN      = "postgres://app:pass@localhost:5432/marketdb"
-	defaultDSN = "postgres://app:pass@marketdb:5432/marketdb"
+	defaultDSN = "postgres://app:pass@localhost:5432/marketdb"
 	//	defaultCacheDSN = "redis://localhost:6379/0"
-	defaultCacheDSN = "redis://marketcache:6379/0"
+	defaultCacheDSN = "redis://localhost:6379/0"
 )
 
 func main() {
@@ -58,7 +59,7 @@ func execute(addr string, dsn string, cacheDSN string) (err error) {
 	shopCtx := context.Background()
 	shopPool, err := pgxpool.Connect(shopCtx, dsn)
 	if err != nil {
-		log.Printf("Execute: %w", err)
+		log.Println(fmt.Errorf("Execute: %w", err))
 		return err
 	}
 	shopRepo := repository.NewShopRepository(shopPool)
@@ -67,7 +68,7 @@ func execute(addr string, dsn string, cacheDSN string) (err error) {
 	categoryCtx := context.Background()
 	categoryPool, err := pgxpool.Connect(categoryCtx, dsn)
 	if err != nil {
-		log.Printf("Execute: %w", err)
+		log.Println(fmt.Errorf("Execute: %w", err))
 		return err
 	}
 	categoryRepo := repository.NewCategoryRepository(categoryPool)
@@ -76,7 +77,7 @@ func execute(addr string, dsn string, cacheDSN string) (err error) {
 	priceCtx := context.Background()
 	pricePool, err := pgxpool.Connect(priceCtx, dsn)
 	if err != nil {
-		log.Printf("Execute: %w", err)
+		log.Println(fmt.Errorf("Execute: %w", err))
 		return err
 	}
 	priceRepo := repository.NewPriceRepository(pricePool)
@@ -85,7 +86,7 @@ func execute(addr string, dsn string, cacheDSN string) (err error) {
 	productCtx := context.Background()
 	productPool, err := pgxpool.Connect(productCtx, dsn)
 	if err != nil {
-		log.Printf("Execute: %w", err)
+		log.Println(fmt.Errorf("Execute: %w", err))
 		return err
 	}
 	productRepo := repository.NewProductRepository(productPool, categoryRepo, shopRepo, priceRepo)

@@ -133,7 +133,7 @@ func (p *productRepo) EditProduct(ctx context.Context, product *model.Product, s
 		}
 	}
 
-	log.Printf("Product %d updated", result.ID)
+	log.Printf("Product %s updated", result.ID)
 	return &result, nil
 }
 

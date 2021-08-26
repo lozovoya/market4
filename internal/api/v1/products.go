@@ -14,14 +14,14 @@ import (
 )
 
 type ProductDTO struct {
-	SKU         string      `json:"sku"`
-	Name        string      `json:"name,omitempty"`
-	Type        string      `json:"type,omitempty"`
-	Description string      `json:"description,omitempty"`
-	IsActive    bool        `json:"is_active,string,omitempty"`
-	Shop_ID     int         `json:"shop_id,string,omitempty"`
-	Category_ID int         `json:"category_id,string,omitempty"`
-	Prices      []*PriceDTO `json:"prices,omitempty"`
+	SKU         string    `json:"sku"`
+	Name        string    `json:"name,omitempty"`
+	Type        string    `json:"type,omitempty"`
+	Description string    `json:"description,omitempty"`
+	IsActive    bool      `json:"is_active,string,omitempty"`
+	Shop_ID     int       `json:"shop_id,string,omitempty"`
+	Category_ID int       `json:"category_id,string,omitempty"`
+	Price       *PriceDTO `json:"price,omitempty"`
 }
 
 type Product struct {
@@ -63,8 +63,37 @@ func (p *Product) AddProduct(writer http.ResponseWriter, request *http.Request) 
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
+	var editedPrice *model.Price
+	if data.Price != nil {
+		var price = model.Price{
+			SalePrice:     data.Price.SalePrice,
+			FactoryPrice:  data.Price.FactoryPrice,
+			DiscountPrice: data.Price.DiscountPrice,
+			IsActive:      data.Price.IsActive,
+			ProductID:     addedProduct.ID,
+		}
+
+		editedPrice, err = p.priceRepo.AddPrice(request.Context(), &price)
+		if err != nil {
+			log.Println(fmt.Errorf("addProduct: %w", err))
+			http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+	}
+
+	var productList = make([]*model.Product, 0)
+	productList = append(productList, addedProduct)
+
+	var priceList = make([]*model.Price, 0)
+	priceList = append(priceList, editedPrice)
+
+	result, err := views.ProductsListWithPrices(productList, priceList)
+	if err != nil {
+		log.Println(fmt.Errorf("ListAllProducts: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
 	writer.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(writer).Encode(addedProduct)
+	err = json.NewEncoder(writer).Encode(result)
 	if err != nil {
 		log.Println(fmt.Errorf("addCategory: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -85,7 +114,7 @@ func (p *Product) EditProduct(writer http.ResponseWriter, request *http.Request)
 		return
 	}
 
-	var shopID, categoryID = 0, 0
+	shopID, categoryID := 0, 0
 
 	var product = model.Product{
 		SKU:         data.SKU,
@@ -104,8 +133,36 @@ func (p *Product) EditProduct(writer http.ResponseWriter, request *http.Request)
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
+	var editedPrice *model.Price
+	if data.Price != nil {
+		var price = model.Price{
+			SalePrice:     data.Price.SalePrice,
+			FactoryPrice:  data.Price.FactoryPrice,
+			DiscountPrice: data.Price.DiscountPrice,
+			IsActive:      data.Price.IsActive,
+			ProductID:     editedProduct.ID,
+		}
+		editedPrice, err = p.priceRepo.EditPriceByProductID(request.Context(), &price)
+		if err != nil {
+			log.Println(fmt.Errorf("editProduct: %w", err))
+			http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+	}
+
+	var productList = make([]*model.Product, 0)
+	productList = append(productList, editedProduct)
+
+	var priceList = make([]*model.Price, 0)
+	priceList = append(priceList, editedPrice)
+
+	result, err := views.ProductsListWithPrices(productList, priceList)
+	if err != nil {
+		log.Println(fmt.Errorf("ListAllProducts: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
 	writer.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(writer).Encode(editedProduct)
+	err = json.NewEncoder(writer).Encode(result)
 	if err != nil {
 		log.Println(fmt.Errorf("editProduct: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -162,6 +219,10 @@ func (p *Product) SearchProductsByCategory(writer http.ResponseWriter, request *
 	if err != nil {
 		log.Println(fmt.Errorf("SearchProductsByCategory: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	if len(products) == 0 {
+		return
 	}
 
 	productsList, err := views.ProductsList(products)
@@ -256,6 +317,14 @@ func (p *Product) SearchActiveProductsOfShop(writer http.ResponseWriter, request
 		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 	}
 	products, err := p.productRepo.SearchProductsByShop(request.Context(), shopID)
+	if err != nil {
+		log.Println(fmt.Errorf("SearchActiveProductsOfShop: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+
+	if len(products) == 0 {
+		return
+	}
 
 	var prices = make([]*model.Price, 0)
 	for _, product := range products {

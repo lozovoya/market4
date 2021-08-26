@@ -35,7 +35,7 @@ func (a *apiCache) ToCache(ctx context.Context, key string, value []byte) (err e
 	}
 	defer func() {
 		if cerr := conn.Close(); cerr != nil {
-			log.Printf("ToCache: %w", err)
+			log.Println(err)
 		}
 	}()
 
@@ -53,7 +53,7 @@ func (a *apiCache) FromCache(ctx context.Context, key string) (value []byte, err
 	}
 	defer func() {
 		if cerr := conn.Close(); cerr != nil {
-			log.Printf("FromCache: %w", err)
+			log.Println(cerr)
 		}
 	}()
 
@@ -61,8 +61,10 @@ func (a *apiCache) FromCache(ctx context.Context, key string) (value []byte, err
 	if err != nil {
 		return nil, fmt.Errorf("FromCache: %w", err)
 	}
-	value, _ = redis.Bytes(reply, err)
-	//todo обработать ошибку
+	value, err = redis.Bytes(reply, nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return value, nil
 }

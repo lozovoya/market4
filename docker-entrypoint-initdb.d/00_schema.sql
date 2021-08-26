@@ -1,7 +1,7 @@
 -- товары
 CREATE TABLE products
 (
-    id          UUID PRIMARY KEY,
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid (),
     sku         TEXT NOT NULL,
     name        TEXT NOT NULL,
     uri         TEXT NOT NULL,

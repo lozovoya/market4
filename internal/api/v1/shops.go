@@ -35,9 +35,7 @@ func (s *Shop) EditShop(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
-
-	//todo проверить что поле id прислано
-	if err != nil {
+	if data.ID == 0 {
 		log.Println(fmt.Errorf("editShop: %w", err))
 		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
@@ -52,15 +50,26 @@ func (s *Shop) EditShop(writer http.ResponseWriter, request *http.Request) {
 
 func (s *Shop) ListAllShops(writer http.ResponseWriter, request *http.Request) {
 
-	log.Println("list all shops")
 	shops, err := s.shopRepo.ListAllShops(request.Context())
 	if err != nil {
+		log.Println(fmt.Errorf("ListAllShops: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
 	shopList, err := views.ShopList(shops)
+	if err != nil {
+		log.Println(fmt.Errorf("ListAllShops: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 	writer.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(writer).Encode(shopList)
+	if err != nil {
+		log.Println(fmt.Errorf("ListAllShops: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (s *Shop) AddShop(writer http.ResponseWriter, request *http.Request) {

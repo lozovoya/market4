@@ -10,12 +10,6 @@ import (
 	"net/http"
 )
 
-type categoryDTO struct {
-	ID       string `json:"id,omitempty"`
-	Name     string `json:"name"`
-	URI_name string `json:"uri_name"`
-}
-
 type Category struct {
 	categoryRepo repository.Category
 }
@@ -90,8 +84,12 @@ func (c *Category) EditCategory(writer http.ResponseWriter, request *http.Reques
 		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
+	if data.ID == 0 {
+		log.Println("wrong ID")
+		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
 
-	//todo проверить id на пустоту
 	if IsEmpty(data.Name) {
 		log.Println("field is empty")
 		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)

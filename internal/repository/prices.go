@@ -17,19 +17,25 @@ func NewPriceRepository(pool *pgxpool.Pool) Price {
 	return &priceRepo{pool: pool}
 }
 
-func (price *priceRepo) AddPrice(ctx context.Context, p *model.Price) (int, error) {
+func (price *priceRepo) AddPrice(ctx context.Context, p *model.Price) (*model.Price, error) {
 
 	dbReq := "INSERT INTO prices (sale_price, factory_price, discount_price, product_id, is_active)" +
 		"VALUES ($1, $2, $3, $4, $5)" +
-		"RETURNING id"
-	var id int
-	err := price.pool.QueryRow(ctx, dbReq, p.SalePrice, p.FactoryPrice, p.DiscountPrice, p.ProductID, p.IsActive).Scan(&id)
-	//TODO обработать ошибку отсутствия id продукта в БД
+		"RETURNING sale_price, factory_price, discount_price"
+	var newPrice model.Price
+	err := price.pool.QueryRow(ctx,
+		dbReq,
+		p.SalePrice,
+		p.FactoryPrice,
+		p.DiscountPrice,
+		p.ProductID,
+		p.IsActive).Scan(&newPrice.SalePrice,
+		&newPrice.FactoryPrice,
+		&newPrice.DiscountPrice)
 	if err != nil {
-		return 0, fmt.Errorf("AddPrice: %w", err)
+		return nil, fmt.Errorf("AddPrice: %w", err)
 	}
-	log.Printf("Price %d is added", id)
-	return id, nil
+	return &newPrice, nil
 }
 
 func (price *priceRepo) EditPrice(ctx context.Context, p *model.Price) (*model.Price, error) {
@@ -46,9 +52,43 @@ func (price *priceRepo) EditPrice(ctx context.Context, p *model.Price) (*model.P
 		p.FactoryPrice,
 		p.DiscountPrice,
 		p.IsActive,
-		p.ID).Scan(&result.ID, &result.SalePrice, &result.FactoryPrice, &result.DiscountPrice, &result.IsActive, &result.ProductID)
+		p.ID).Scan(&result.ID,
+		&result.SalePrice,
+		&result.FactoryPrice,
+		&result.DiscountPrice,
+		&result.IsActive,
+		&result.ProductID)
 	if err != nil {
-		return nil, fmt.Errorf("EditPrice: %w", err)
+		if strings.Contains(err.Error(), "no rows in result set") {
+			return nil, nil
+		}
+		return &result, fmt.Errorf("EditPrice: %w", err)
+	}
+
+	log.Printf("Price for %s is updated", p.ProductID)
+	return &result, nil
+}
+
+func (price *priceRepo) EditPriceByProductID(ctx context.Context, p *model.Price) (*model.Price, error) {
+
+	var dbReq = "UPDATE prices " +
+		"SET sale_price=$1, factory_price=$2, discount_price=$3, is_active=$4, updated=CURRENT_TIMESTAMP " +
+		"WHERE product_id = $5" +
+		"RETURNING id, sale_price, factory_price, discount_price, is_active, product_id"
+	var result model.Price
+	err := price.pool.QueryRow(
+		ctx,
+		dbReq,
+		p.SalePrice,
+		p.FactoryPrice,
+		p.DiscountPrice,
+		p.IsActive,
+		p.ProductID).Scan(&result.ID, &result.SalePrice, &result.FactoryPrice, &result.DiscountPrice, &result.IsActive, &result.ProductID)
+	if err != nil {
+		if strings.Contains(err.Error(), "no rows in result set") {
+			return &result, nil
+		}
+		return nil, fmt.Errorf("EditPriceByProductID: %w", err)
 	}
 
 	log.Printf("Price for %s is updated", p.ProductID)

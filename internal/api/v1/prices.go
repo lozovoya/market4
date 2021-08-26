@@ -16,7 +16,7 @@ type PriceDTO struct {
 	FactoryPrice  int    `json:"factory_price,string"`
 	DiscountPrice int    `json:"discount_price,string"`
 	IsActive      bool   `json:"is_active,string"`
-	ProductID     string `json:"product_id"`
+	ProductID     string `json:"product_id,omitempty"`
 }
 
 type Price struct {
@@ -43,14 +43,14 @@ func (price *Price) AddPrice(writer http.ResponseWriter, request *http.Request) 
 		IsActive:      data.IsActive,
 		ProductID:     data.ProductID,
 	}
-	id, err := price.priceRepo.AddPrice(request.Context(), &p)
+	addedPrice, err := price.priceRepo.AddPrice(request.Context(), &p)
 	if err != nil {
 		log.Println(fmt.Errorf("AddPrice: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(writer).Encode(id)
+	err = json.NewEncoder(writer).Encode(addedPrice)
 	if err != nil {
 		log.Println(fmt.Errorf("editProduct: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -82,7 +82,15 @@ func (price *Price) EditPrice(writer http.ResponseWriter, request *http.Request)
 		ProductID:     data.ProductID,
 	}
 	editedPrice, err := price.priceRepo.EditPrice(request.Context(), &p)
+	if err != nil {
+		log.Println(fmt.Errorf("EditPrice: %w", err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 
+	if editedPrice == nil {
+		return
+	}
 	var priceList = make([]*model.Price, 0)
 	priceList = append(priceList, editedPrice)
 	result, err := views.PricesList(priceList)
