@@ -3,10 +3,11 @@ package repository
 import (
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
 	"market4/internal/model"
 	"strings"
+
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type priceRepo struct {
@@ -18,7 +19,6 @@ func NewPriceRepository(pool *pgxpool.Pool) Price {
 }
 
 func (price *priceRepo) AddPrice(ctx context.Context, p *model.Price) (*model.Price, error) {
-
 	dbReq := "INSERT INTO prices (sale_price, factory_price, discount_price, product_id, is_active)" +
 		"VALUES ($1, $2, $3, $4, $5)" +
 		"RETURNING sale_price, factory_price, discount_price"
@@ -39,7 +39,6 @@ func (price *priceRepo) AddPrice(ctx context.Context, p *model.Price) (*model.Pr
 }
 
 func (price *priceRepo) EditPrice(ctx context.Context, p *model.Price) (*model.Price, error) {
-
 	var dbReq = "UPDATE prices " +
 		"SET sale_price=$1, factory_price=$2, discount_price=$3, is_active=$4, updated=CURRENT_TIMESTAMP " +
 		"WHERE id = $5" +
@@ -70,7 +69,6 @@ func (price *priceRepo) EditPrice(ctx context.Context, p *model.Price) (*model.P
 }
 
 func (price *priceRepo) EditPriceByProductID(ctx context.Context, p *model.Price) (*model.Price, error) {
-
 	var dbReq = "UPDATE prices " +
 		"SET sale_price=$1, factory_price=$2, discount_price=$3, is_active=$4, updated=CURRENT_TIMESTAMP " +
 		"WHERE product_id = $5" +
@@ -123,10 +121,11 @@ func (price *priceRepo) ListAllPrices(ctx context.Context) ([]*model.Price, erro
 	}
 	return prices, nil
 }
-
 func (price *priceRepo) SearchPriceByProductID(ctx context.Context, productID string) (*model.Price, error) {
-
-	dbReq := fmt.Sprintf("SELECT id, sale_price, factory_price, discount_price, product_id, is_active FROM prices WHERE product_id = '%s'", productID)
+	dbReq := fmt.Sprintf("SELECT id, sale_price, factory_price, discount_price, product_id, is_active "+
+		"FROM prices "+
+		"WHERE product_id = '%s'",
+		productID)
 	var productPrice model.Price
 	err := price.pool.QueryRow(ctx, dbReq).Scan(
 		&productPrice.ID,

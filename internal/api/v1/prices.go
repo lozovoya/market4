@@ -55,7 +55,6 @@ func (price *Price) AddPrice(writer http.ResponseWriter, request *http.Request) 
 		log.Println(fmt.Errorf("editProduct: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
-
 }
 
 func (price *Price) EditPrice(writer http.ResponseWriter, request *http.Request) {
@@ -105,7 +104,6 @@ func (price *Price) EditPrice(writer http.ResponseWriter, request *http.Request)
 		log.Println(fmt.Errorf("editPrice: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
-
 }
 
 func (price *Price) ListAllPrices(writer http.ResponseWriter, request *http.Request) {
@@ -127,5 +125,4 @@ func (price *Price) ListAllPrices(writer http.ResponseWriter, request *http.Requ
 		log.Println(fmt.Errorf("ListAllPrices: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
-
 }

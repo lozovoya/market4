@@ -17,9 +17,7 @@ type Category struct {
 func NewCategory(categoryRepo repository.Category) *Category {
 	return &Category{categoryRepo: categoryRepo}
 }
-
 func (c *Category) ListAllCategories(writer http.ResponseWriter, request *http.Request) {
-
 	log.Printf("path: %s", request.RequestURI)
 	categories, err := c.categoryRepo.ListAllCategories(request.Context())
 	if err != nil {
@@ -74,9 +72,7 @@ func (c *Category) AddCategory(writer http.ResponseWriter, request *http.Request
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 }
-
 func (c *Category) EditCategory(writer http.ResponseWriter, request *http.Request) {
-
 	var data *model.Category
 	err := json.NewDecoder(request.Body).Decode(&data)
 	if err != nil {

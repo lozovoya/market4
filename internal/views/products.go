@@ -7,7 +7,6 @@ import (
 )
 
 func ProductsList(products []*model.Product) (*ProductsListDTO, error) {
-
 	if len(products) == 0 {
 		err := errors.New("Product list is empty")
 		return nil, fmt.Errorf("ProductList: %w", err)
@@ -29,9 +28,7 @@ func ProductsList(products []*model.Product) (*ProductsListDTO, error) {
 
 	return &productsList, nil
 }
-
 func ProductsListWithPrices(products []*model.Product, prices []*model.Price) (*ProductsListDTO, error) {
-
 	if len(products) == 0 {
 		err := errors.New("Product list is empty")
 		return nil, fmt.Errorf("ProductList: %w", err)

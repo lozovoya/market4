@@ -10,5 +10,16 @@ INTO categories (name, uri_name)
 VALUES ('Стройматериалы', 'Стройматериалы-1'),
        ('Игрушки', 'Игрушки-2'),
        ('Продукты', 'Продукты-3'),
-       ('Тряпки', 'Тряпки-4');
+       ('Тряпки', 'Тряпки-4'),
+       ('Товаря для дома', 'Товары для дома-5');
+
+INSERT
+INTO roles (name)
+VALUES ('USER'),
+       ('ADMIN');
+
+INSERT
+INTO users (login, role)
+VALUES ('user1', 1),
+       ('user2', 2);
 

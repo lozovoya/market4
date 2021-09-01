@@ -3,9 +3,10 @@ package cache
 import (
 	"context"
 	"fmt"
-	"github.com/gomodule/redigo/redis"
 	"log"
 	"time"
+
+	"github.com/gomodule/redigo/redis"
 )
 
 const TTL = 30
@@ -26,9 +27,7 @@ func InitCache(addr string) *redis.Pool {
 	}
 	return myCache
 }
-
 func (a *apiCache) ToCache(ctx context.Context, key string, value []byte) (err error) {
-
 	conn, err := a.pool.GetContext(ctx)
 	if err != nil {
 		return fmt.Errorf("ToCache: %w", err)

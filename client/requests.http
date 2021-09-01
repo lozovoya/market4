@@ -1,3 +1,14 @@
+### добавить пользователя
+
+POST http://localhost:9999/api/v1/users
+Content-Type: application/json
+
+{
+  "login":"user4",
+  "password": "user1password",
+  "role": "ADMIN"
+}
+
 
 ### добавить магазин
 
@@ -15,7 +26,7 @@ PUT http://localhost:9999/api/v1/shops
 Content-Type: application/json
 
 {
-  "id":"5",
+  "id":"2",
   "name":"aaa",
   "workingHours":"10 - 11",
   "lon":"454355",
@@ -41,7 +52,7 @@ PUT http://localhost:9999/api/v1/categories
 Content-Type: application/json
 
 {
-  "id":"7",
+  "id":"2",
   "name":"мимоза"
 }
 
@@ -49,13 +60,13 @@ Content-Type: application/json
 
 GET http://localhost:9999/api/v1/categories
 
-### добавить продукт
+### добавить продукт 1
 
 POST http://localhost:9999/api/v1/products
 Content-Type: application/json
 
 {
-  "sku":"3005",
+  "sku":"3001",
   "name": "пушка",
   "type": "тепловая",
   "description": "пушка детская",
@@ -70,6 +81,89 @@ Content-Type: application/json
      }
 }
 
+### добавить продукт 2
+
+POST http://localhost:9999/api/v1/products
+Content-Type: application/json
+
+{
+  "sku":"3002",
+  "name": "ручка",
+  "type": "дверная",
+  "description": "ручка дверная хромированная",
+  "shop_id": "1",
+  "category_id": "1",
+  "price":
+  {
+    "sale_price":"4000",
+    "factory_price": "3000",
+    "discount_price": "0",
+    "is_active": "true"
+  }
+}
+
+### добавить продукт 3
+
+POST http://localhost:9999/api/v1/products
+Content-Type: application/json
+
+{
+  "sku":"3003",
+  "name": "тушка",
+  "type": "мясное",
+  "description": "тушка тушканчика",
+  "shop_id": "2",
+  "category_id": "3",
+  "price":
+  {
+    "sale_price":"400",
+    "factory_price": "300",
+    "discount_price": "10",
+    "is_active": "true"
+  }
+}
+
+### добавить продукт 4
+
+POST http://localhost:9999/api/v1/products
+Content-Type: application/json
+
+{
+  "sku":"3004",
+  "name": "пушка",
+  "type": "тепловая",
+  "description": "пушка строительная",
+  "shop_id": "4",
+  "category_id": "1",
+  "price":
+  {
+    "sale_price":"7000",
+    "factory_price": "5000",
+    "discount_price": "40",
+    "is_active": "true"
+  }
+}
+
+### добавить продукт 5
+
+POST http://localhost:9999/api/v1/products
+Content-Type: application/json
+
+{
+  "sku":"3005",
+  "name": "сушка",
+  "type": "бельевая",
+  "description": "сушка для белья",
+  "shop_id": "4",
+  "category_id": "5",
+  "price":
+  {
+    "sale_price":"1000",
+    "factory_price": "300",
+    "discount_price": "15",
+    "is_active": "true"
+  }
+}
 
 ### редактировать продукт
 
@@ -124,4 +218,4 @@ GET http://localhost:9999/api/v1/categories/4/products
 GET http://localhost:9999/api/v1/search/подушка
 
 ### получить список активных продуктов магазина
-GET http://localhost:9999/api/v1/shops/11/products
+GET http://localhost:9999/api/v1/shops/3/products

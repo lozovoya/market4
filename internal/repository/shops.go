@@ -3,10 +3,11 @@ package repository
 import (
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
 	"market4/internal/model"
 	"strings"
+
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type shopRepo struct {
@@ -16,9 +17,7 @@ type shopRepo struct {
 func NewShopRepository(pool *pgxpool.Pool) Shop {
 	return &shopRepo{pool: pool}
 }
-
 func (s *shopRepo) IfShopExists(ctx context.Context, shop int) bool {
-
 	dbReq := "SELECT id FROM shops WHERE id=$1"
 	var id = 0
 	err := s.pool.QueryRow(ctx, dbReq, shop).Scan(&id)
@@ -31,9 +30,7 @@ func (s *shopRepo) IfShopExists(ctx context.Context, shop int) bool {
 	}
 	return false
 }
-
 func (s *shopRepo) ListAllShops(ctx context.Context) ([]*model.Shop, error) {
-
 	dbReq := "SELECT id, name, address, lon, lat, working_hours " +
 		"FROM shops"
 

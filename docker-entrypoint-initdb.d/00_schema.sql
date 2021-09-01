@@ -68,13 +68,14 @@ CREATE TABLE presence
 CREATE TABLE roles
 (
     id BIGSERIAL PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE
+    role TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE users
 (
     id BIGSERIAL PRIMARY KEY,
     login TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL,
     role BIGINT REFERENCES roles
 );
 

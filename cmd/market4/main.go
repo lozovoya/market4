@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
 	"market4/internal/api/httpserver"
 	controllers "market4/internal/api/v1"
@@ -13,6 +11,9 @@ import (
 	"net"
 	"net/http"
 	"os"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 const (
@@ -50,9 +51,7 @@ func main() {
 		os.Exit(1)
 	}
 }
-
-func execute(addr string, dsn string, cacheDSN string) (err error) {
-
+func execute(addr, dsn, cacheDSN string) (err error) {
 	cachePool := cache2.InitCache(cacheDSN)
 	cache := cache2.NewRedisCache(cachePool)
 
@@ -92,11 +91,21 @@ func execute(addr string, dsn string, cacheDSN string) (err error) {
 	productRepo := repository.NewProductRepository(productPool, categoryRepo, shopRepo, priceRepo)
 	productController := controllers.NewProduct(productRepo, priceRepo, cache)
 
-	router := httpserver.NewRouter(*chi.NewRouter(),
+	usersCtx := context.Background()
+	usersPool, err := pgxpool.Connect(usersCtx, dsn)
+	if err != nil {
+		log.Println(fmt.Errorf("Execute: %w", err))
+		return err
+	}
+	usersRepo := repository.NewUsersRepo(usersPool)
+	usersController := controllers.NewUser(usersRepo)
+
+	router := httpserver.NewRouter(chi.NewRouter(),
 		shopController,
 		categoryController,
 		productController,
-		priceController)
+		priceController,
+		usersController)
 
 	server := http.Server{
 		Addr:    addr,

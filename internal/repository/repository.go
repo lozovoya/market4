@@ -36,3 +36,10 @@ type Price interface {
 	SearchPriceByProductID(ctx context.Context, productID string) (*model.Price, error)
 	EditPriceByProductID(ctx context.Context, p *model.Price) (*model.Price, error)
 }
+
+type Users interface {
+	AddUser(ctx context.Context, u *model.User) (*model.User, error)
+	EditUser(ctx context.Context, u *model.User) (*model.User, error)
+	GetHash(ctx context.Context, login string) (string, error)
+	IsUserHasRole(ctx context.Context, login string, role string) (bool, error)
+}

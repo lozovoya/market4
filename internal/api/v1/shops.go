@@ -47,9 +47,7 @@ func (s *Shop) EditShop(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 }
-
 func (s *Shop) ListAllShops(writer http.ResponseWriter, request *http.Request) {
-
 	shops, err := s.shopRepo.ListAllShops(request.Context())
 	if err != nil {
 		log.Println(fmt.Errorf("ListAllShops: %w", err))
@@ -71,9 +69,7 @@ func (s *Shop) ListAllShops(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 }
-
 func (s *Shop) AddShop(writer http.ResponseWriter, request *http.Request) {
-
 	var data *model.Shop
 	err := json.NewDecoder(request.Body).Decode(&data)
 	if err != nil {

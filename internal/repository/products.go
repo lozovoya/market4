@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
 	"market4/internal/model"
 	"strings"
+
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type productRepo struct {
@@ -20,10 +21,6 @@ type productRepo struct {
 func NewProductRepository(pool *pgxpool.Pool, categoryRepo Category, shopRepo Shop, priceRepo Price) Product {
 	return &productRepo{pool: pool, categoryRepo: categoryRepo, shopRepo: shopRepo, priceRepo: priceRepo}
 }
-
-//func NewProductRepository(pool *pgxpool.Pool, categoryRepo Category, shopRepo Shop) Product {
-//		return &productRepo{pool: pool, categoryRepo: categoryRepo, shopRepo: shopRepo}
-//	}
 
 func (p *productRepo) IfProductExists(ctx context.Context, productID string) bool {
 	dbReq := "SELECT id FROM products WHERE id=$1"
@@ -38,9 +35,7 @@ func (p *productRepo) IfProductExists(ctx context.Context, productID string) boo
 	}
 	return false
 }
-
-func (p *productRepo) AddProduct(ctx context.Context, product *model.Product, shopId int, categoryId int) (*model.Product, error) {
-
+func (p *productRepo) AddProduct(ctx context.Context, product *model.Product, shopId, categoryId int) (*model.Product, error) {
 	if !p.categoryRepo.IfCategoryExists(ctx, categoryId) {
 		err := errors.New("category doesn't exist")
 		return nil, fmt.Errorf("AddProduct: %w", err)
@@ -56,7 +51,18 @@ func (p *productRepo) AddProduct(ctx context.Context, product *model.Product, sh
 	uri := fmt.Sprintf("/product/%s-%s", product.Type, product.SKU)
 	var result model.Product
 
-	err := p.pool.QueryRow(ctx, dbReq, product.SKU, product.Name, uri, product.Description, true).Scan(&result.ID, &result.SKU, &result.Name, &result.URI, &result.Description, &result.IsActive)
+	err := p.pool.QueryRow(ctx,
+		dbReq,
+		product.SKU,
+		product.Name,
+		uri,
+		product.Description,
+		true).Scan(&result.ID,
+		&result.SKU,
+		&result.Name,
+		&result.URI,
+		&result.Description,
+		&result.IsActive)
 	if err != nil {
 		return nil, fmt.Errorf("AddProduct: %w", err)
 	}
@@ -73,9 +79,7 @@ func (p *productRepo) AddProduct(ctx context.Context, product *model.Product, sh
 
 	return &result, nil
 }
-
 func (p *productRepo) setProductCategory(ctx context.Context, categoryId int, productId string) error {
-
 	dbReq := "INSERT INTO productcategory (category_id, product_id)" +
 		" VALUES ($1, $2)"
 	_, err := p.pool.Exec(ctx, dbReq, categoryId, productId)
@@ -94,9 +98,7 @@ func (p *productRepo) setProductShop(ctx context.Context, shopID int, productID 
 	}
 	return nil
 }
-
-func (p *productRepo) EditProduct(ctx context.Context, product *model.Product, shopID int, categoryID int) (*model.Product, error) {
-
+func (p *productRepo) EditProduct(ctx context.Context, product *model.Product, shopID, categoryID int) (*model.Product, error) {
 	var dbReq = "UPDATE products SET "
 
 	if !IsEmpty(product.Name) {
@@ -109,7 +111,10 @@ func (p *productRepo) EditProduct(ctx context.Context, product *model.Product, s
 		dbReq = fmt.Sprintf("%s uri = '/product/%s-%s', ", dbReq, product.Type, product.SKU)
 	}
 
-	dbReq = fmt.Sprintf("%s is_active = %t, updated = CURRENT_TIMESTAMP WHERE sku = '%s' RETURNING id, sku, name, uri, description, is_active", dbReq, product.IsActive, product.SKU)
+	dbReq = fmt.Sprintf("%s is_active = %t, "+
+		"updated = CURRENT_TIMESTAMP WHERE sku = '%s' "+
+		"RETURNING id, sku, name, uri, description, is_active",
+		dbReq, product.IsActive, product.SKU)
 
 	var result model.Product
 	err := p.pool.QueryRow(ctx, dbReq).Scan(&result.ID, &result.SKU, &result.Name, &result.URI, &result.Description, &result.IsActive)
@@ -160,9 +165,7 @@ func (p *productRepo) ListAllProducts(ctx context.Context) ([]*model.Product, er
 
 	return products, nil
 }
-
 func (p *productRepo) SearchProductsByCategory(ctx context.Context, category int) ([]*model.Product, error) {
-
 	products := make([]*model.Product, 0)
 
 	dbReq := "SELECT products.id, products.name, products.uri " +
@@ -186,11 +189,8 @@ func (p *productRepo) SearchProductsByCategory(ctx context.Context, category int
 		products = append(products, &product)
 	}
 	return products, nil
-
 }
-
 func (p *productRepo) SearchProductsByName(ctx context.Context, productName string) (*model.Product, error) {
-
 	dbReq := "SELECT sku, name, uri, description, id " +
 		"FROM products " +
 		"WHERE name = $1"
@@ -205,9 +205,7 @@ func (p *productRepo) SearchProductsByName(ctx context.Context, productName stri
 
 	return &product, nil
 }
-
 func (p *productRepo) SearchProductsByShop(ctx context.Context, shopID int) ([]*model.Product, error) {
-
 	var products = make([]*model.Product, 0)
 	dbReq := "SELECT products.id, products.sku, products.name, products.uri, products.description, products.is_active " +
 		"FROM products " +

@@ -5,7 +5,6 @@ import (
 )
 
 func ShopList(shops []*model.Shop) (*ShopListDTO, error) {
-
 	if len(shops) == 0 {
 		return nil, nil
 	}

@@ -5,7 +5,6 @@ import (
 )
 
 func CategoriesList(categories []*model.Category) (*CategoriesListDTO, error) {
-
 	if len(categories) == 0 {
 		return nil, nil
 	}

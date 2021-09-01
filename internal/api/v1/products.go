@@ -3,7 +3,6 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/go-chi/chi/v5"
 	"log"
 	"market4/internal/cache"
 	"market4/internal/model"
@@ -11,6 +10,8 @@ import (
 	"market4/internal/views"
 	"net/http"
 	"strconv"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type ProductDTO struct {
@@ -27,15 +28,13 @@ type ProductDTO struct {
 type Product struct {
 	productRepo repository.Product
 	priceRepo   repository.Price
-	cache       cache.Cache
+	stock       cache.Cache
 }
 
-func NewProduct(productRepo repository.Product, priceRepo repository.Price, cache cache.Cache) *Product {
-	return &Product{productRepo: productRepo, priceRepo: priceRepo, cache: cache}
+func NewProduct(productRepo repository.Product, priceRepo repository.Price, stock cache.Cache) *Product {
+	return &Product{productRepo: productRepo, priceRepo: priceRepo, stock: stock}
 }
-
 func (p *Product) AddProduct(writer http.ResponseWriter, request *http.Request) {
-
 	var data *ProductDTO
 	err := json.NewDecoder(request.Body).Decode(&data)
 	if err != nil {
@@ -167,7 +166,6 @@ func (p *Product) EditProduct(writer http.ResponseWriter, request *http.Request)
 		log.Println(fmt.Errorf("editProduct: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
-
 }
 
 func (p *Product) ListAllProducts(writer http.ResponseWriter, request *http.Request) {
@@ -196,10 +194,8 @@ func (p *Product) ListAllProducts(writer http.ResponseWriter, request *http.Requ
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 }
-
 func (p *Product) SearchProductsByCategory(writer http.ResponseWriter, request *http.Request) {
-
-	if productsList, _ := p.cache.FromCache(request.Context(), request.RequestURI); productsList != nil {
+	if productsList, _ := p.stock.FromCache(request.Context(), request.RequestURI); productsList != nil {
 		writer.Header().Set("Content-Type", "application/json")
 		_, err := writer.Write(productsList)
 		if err != nil {
@@ -244,15 +240,13 @@ func (p *Product) SearchProductsByCategory(writer http.ResponseWriter, request *
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
-	err = p.cache.ToCache(request.Context(), request.RequestURI, body)
+	err = p.stock.ToCache(request.Context(), request.RequestURI, body)
 	if err != nil {
 		log.Println(fmt.Errorf("SearchProductsByCategory: %w", err))
 	}
 }
-
 func (p *Product) SearchProductByName(writer http.ResponseWriter, request *http.Request) {
-
-	if result, _ := p.cache.FromCache(request.Context(), request.RequestURI); result != nil {
+	if result, _ := p.stock.FromCache(request.Context(), request.RequestURI); result != nil {
 		writer.Header().Set("Content-Type", "application/json")
 		_, err := writer.Write(result)
 		if err != nil {
@@ -302,15 +296,12 @@ func (p *Product) SearchProductByName(writer http.ResponseWriter, request *http.
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
-	err = p.cache.ToCache(request.Context(), request.RequestURI, body)
+	err = p.stock.ToCache(request.Context(), request.RequestURI, body)
 	if err != nil {
 		log.Println(fmt.Errorf("SearchPriceByProductID: %w", err))
 	}
-
 }
-
 func (p *Product) SearchActiveProductsOfShop(writer http.ResponseWriter, request *http.Request) {
-
 	shopID, err := strconv.Atoi(chi.URLParam(request, "shopID"))
 	if err != nil {
 		log.Println(fmt.Errorf("SearchActiveProductsOfShop: %w", err))
@@ -329,8 +320,8 @@ func (p *Product) SearchActiveProductsOfShop(writer http.ResponseWriter, request
 	var prices = make([]*model.Price, 0)
 	for _, product := range products {
 		if product.IsActive {
-			price, err := p.priceRepo.SearchPriceByProductID(request.Context(), product.ID)
-			if err != nil {
+			price, сerr := p.priceRepo.SearchPriceByProductID(request.Context(), product.ID)
+			if сerr != nil {
 				log.Println(fmt.Errorf("SearchActiveProductsOfShop: %w", err))
 				http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			}
@@ -350,5 +341,4 @@ func (p *Product) SearchActiveProductsOfShop(writer http.ResponseWriter, request
 		log.Println(fmt.Errorf("SearchActiveProductsOfShop: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
-
 }
