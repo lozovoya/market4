@@ -3,6 +3,7 @@ module market4
 go 1.16
 
 require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/go-chi/chi/v5 v5.0.3 // indirect
 	github.com/gomodule/redigo v1.8.5 // indirect
 	github.com/jackc/pgx/v4 v4.11.0 // indirect

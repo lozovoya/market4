@@ -9,6 +9,19 @@ Content-Type: application/json
   "role": "ADMIN"
 }
 
+### редактировать пользователя
+
+PUT http://localhost:9999/api/v1/users
+Content-Type: application/json
+
+{
+  "login":"user3",
+  "password": "user3password",
+  "role": "USER"
+}
+
+### запрос токена
+GET http://localhost:9999/api/v1/users/token
 
 ### добавить магазин
 
@@ -106,6 +119,7 @@ Content-Type: application/json
 
 POST http://localhost:9999/api/v1/products
 Content-Type: application/json
+Authorization: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJJRCI6MywiUm9sZSI6IkFETUlOIiwiZXhwIjoxNjMwNjE5NDk4LCJpYXQiOjE2MzA2MTU4OTh9.k4_UM1JL2JsC0f3qvkuA5Q261iyREKbwGEDyqkb17Wm-F1_q0Rb4i98h9wi6tawhUag-jgYo2pP3eoly7Hv8HjW18Bwle4RActTGxWeJdPSRQCGT1YCQ4yNUqUeDxDjjqwXtN4NcrvD5Oh-MO4_wgm97ZhZnzHuGCVybzVIDI7TohGVMN9hQ7QChWF48j0G50HNhnABD4zTB_vR_0q2_NAzGA6Q99SyhQV0p7f3Pn62DblU20b_vbb8ya46IjJi1bynw3DzAl9X-UVsW56MbogcRwS7oU7YlU5ktX21wVLdjIe1e8LFNfpFSru9h5GribCtjOS_bDb5jtG7y4IBAPQ
 
 {
   "sku":"3003",

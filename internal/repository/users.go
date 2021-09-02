@@ -36,7 +36,25 @@ func (u *usersRepo) AddUser(ctx context.Context, user *model.User) (*model.User,
 }
 
 func (u *usersRepo) EditUser(ctx context.Context, user *model.User) (*model.User, error) {
-	panic("implement me")
+	dbReq := "UPDATE users " +
+		"SET password = $1, " +
+		"role = (SELECT id FROM roles WHERE name = $2) " +
+		"WHERE login = $3 RETURNING id"
+	var editedUser model.User
+	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), 10)
+	if err != nil {
+		fmt.Errorf("AddUser: %w", err)
+		return nil, err
+	}
+	err = u.pool.QueryRow(ctx, dbReq, hash, user.Role, user.Login).Scan(&editedUser.ID)
+	if err != nil {
+		if strings.Contains(err.Error(), "no rows in result set") {
+			return &editedUser, nil
+		}
+		fmt.Errorf("EditUser: %w", err)
+		return &editedUser, err
+	}
+	return &editedUser, nil
 }
 
 func (u *usersRepo) GetHash(ctx context.Context, login string) (string, error) {

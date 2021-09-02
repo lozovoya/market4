@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"log"
+	"market4/internal/api/httpserver/md"
 	v1 "market4/internal/api/v1"
 
 	"github.com/go-chi/chi/v5"
@@ -25,7 +26,7 @@ func NewRouter(
 		router.Post("/categories", categoryController.AddCategory)
 		router.Put("/categories", categoryController.EditCategory)
 
-		router.Post("/products", productController.AddProduct)
+		router.With(md.Auth("ADMIN")).Post("/products", productController.AddProduct)
 		router.Put("/products", productController.EditProduct)
 		router.Get("/products", productController.ListAllProducts)
 
@@ -38,6 +39,8 @@ func NewRouter(
 		router.Get("/shops/{shopID:.+}/products", productController.SearchActiveProductsOfShop)
 
 		router.Post("/users", usersController.AddUser)
+		router.Put("/users", usersController.EditUser)
+		router.Get("/users/token", usersController.Token)
 	})
 
 	log.Println("new router is activated")
