@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"market4/internal/api/auth"
 	"market4/internal/api/httpserver"
 	controllers "market4/internal/api/v1"
 	cache2 "market4/internal/cache"
@@ -23,6 +24,8 @@ const (
 	defaultDSN = "postgres://app:pass@localhost:5432/marketdb"
 	//	defaultCacheDSN = "redis://localhost:6379/0"
 	defaultCacheDSN = "redis://localhost:6379/0"
+	PRIVATEKEY      = "./keys/private.key"
+	PUBLICKEY       = "./keys/public.key"
 )
 
 func main() {
@@ -46,14 +49,21 @@ func main() {
 		cacheDSN = defaultCacheDSN
 	}
 
-	if err := execute(net.JoinHostPort(host, port), dsn, cacheDSN); err != nil {
+	privateJWTKey, ok := os.LookupEnv("privateJWTKey")
+	if !ok {
+		privateJWTKey = PRIVATEKEY
+	}
+
+	if err := execute(net.JoinHostPort(host, port), dsn, cacheDSN, privateJWTKey); err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
 }
-func execute(addr, dsn, cacheDSN string) (err error) {
+func execute(addr, dsn, cacheDSN, privateJWTKey string) (err error) {
 	cachePool := cache2.InitCache(cacheDSN)
 	cache := cache2.NewRedisCache(cachePool)
+
+	authService := auth.NewAuthService(privateJWTKey)
 
 	shopCtx := context.Background()
 	shopPool, err := pgxpool.Connect(shopCtx, dsn)
@@ -98,7 +108,7 @@ func execute(addr, dsn, cacheDSN string) (err error) {
 		return err
 	}
 	usersRepo := repository.NewUsersRepo(usersPool)
-	usersController := controllers.NewUser(usersRepo)
+	usersController := controllers.NewUser(usersRepo, *authService)
 
 	router := httpserver.NewRouter(chi.NewRouter(),
 		shopController,

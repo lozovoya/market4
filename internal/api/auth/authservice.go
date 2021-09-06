@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"io/ioutil"
 	"time"
 )
@@ -14,13 +13,15 @@ const (
 	PUBLICKEY  = "./keys/public.key"
 )
 
-type authService struct {
+type AuthService struct {
 	privateKey string
 	publicKey  string
 }
 
-func NewAuthService(pool *pgxpool.Pool) {
-
+func NewAuthService(privateKey string) *AuthService {
+	return &AuthService{
+		privateKey: privateKey,
+	}
 }
 
 type Payload struct {
@@ -29,8 +30,8 @@ type Payload struct {
 	jwt.StandardClaims
 }
 
-func GetToken(ctx context.Context, id int, role string) (string, error) {
-	privateKeySource, err := ioutil.ReadFile(PRIVATEKEY)
+func (a *AuthService) GetToken(ctx context.Context, id int, role string) (string, error) {
+	privateKeySource, err := ioutil.ReadFile(a.privateKey)
 	if err != nil {
 		return "", fmt.Errorf("Token: %w", err)
 	}

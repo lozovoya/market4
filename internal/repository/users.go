@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"golang.org/x/crypto/bcrypt"
+	"log"
 	"market4/internal/model"
 	"strings"
 )
@@ -71,20 +72,34 @@ func (u *usersRepo) GetHash(ctx context.Context, login string) (string, error) {
 	return hash, nil
 }
 
-func (u *usersRepo) IsUserHasRole(ctx context.Context, login string, role string) (bool, error) {
+func (u *usersRepo) IsUserHasRole(ctx context.Context, user *model.User) bool {
 	dbReq := "SELECT roles.name FROM users, roles " +
 		"WHERE users.login = $1 AND users.role = roles.id"
 	var reply string
-	err := u.pool.QueryRow(ctx, dbReq, login).Scan(&reply)
+	err := u.pool.QueryRow(ctx, dbReq, user.Login).Scan(&reply)
 	if err != nil {
-		if strings.Contains(err.Error(), "no rows in result set") {
-			return false, nil
-		}
-		fmt.Errorf("IsUserHasRole: %w", err)
-		return false, err
+		log.Println(fmt.Errorf("IsUserHasRole: %w", err))
+		return false
 	}
-	if reply != role {
-		return false, nil
+	if reply != user.Role {
+		return false
 	}
-	return true, nil
+	return true
+}
+
+func (u *usersRepo) CheckCreds(ctx context.Context, user *model.User) bool {
+	dbReq := "SELECT password FROM users WHERE login = $1"
+	var hash []byte
+	err := u.pool.QueryRow(ctx, dbReq, user.Login).Scan(&hash)
+	if err != nil {
+		log.Println(fmt.Errorf("CheckCreds: %w", err))
+		return false
+	}
+	err = bcrypt.CompareHashAndPassword(hash, []byte(user.Password))
+	if err != nil {
+		log.Println(fmt.Errorf("CheckCreds: %w: ", err))
+		return false
+	}
+
+	return true
 }

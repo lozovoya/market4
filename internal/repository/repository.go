@@ -41,5 +41,6 @@ type Users interface {
 	AddUser(ctx context.Context, u *model.User) (*model.User, error)
 	EditUser(ctx context.Context, u *model.User) (*model.User, error)
 	GetHash(ctx context.Context, login string) (string, error)
-	IsUserHasRole(ctx context.Context, login string, role string) (bool, error)
+	IsUserHasRole(ctx context.Context, u *model.User) bool
+	CheckCreds(ctx context.Context, u *model.User) bool
 }
