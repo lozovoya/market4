@@ -55,11 +55,11 @@ func NewAuthService(privateKey, publicKey string, usersRepo repository.Users) *A
 
 type Payload struct {
 	ID   int
-	Role int
+	Role string
 	jwt.StandardClaims
 }
 
-func (a *AuthService) GetToken(ctx context.Context, id int, role int) (string, error) {
+func (a *AuthService) GetToken(ctx context.Context, id int, role string) (string, error) {
 
 	payload := Payload{
 		ID:   id,
@@ -77,22 +77,22 @@ func (a *AuthService) GetToken(ctx context.Context, id int, role int) (string, e
 	return token, nil
 }
 
-func (a *AuthService) GetRoleFromToken(ctx context.Context, token string) (int, error) {
+func (a *AuthService) GetRoleFromToken(ctx context.Context, token string) (string, error) {
 	payload, err := jwt.ParseWithClaims(token, &Payload{}, func(token *jwt.Token) (interface{}, error) {
 		return a.publicKey, nil
 	})
 	if err != nil {
 		log.Println(fmt.Errorf("CheckToken: %w", err))
-		return 0, err
+		return "", err
 	}
 	if !payload.Valid {
 		log.Println(fmt.Errorf("CheckToken: %w", err))
-		return 0, err
+		return "", err
 	}
 	claims, ok := payload.Claims.(*Payload)
 	if !ok {
 		log.Println(fmt.Errorf("CheckToken: %w", err))
-		return 0, err
+		return "", err
 	}
 
 	return claims.Role, nil

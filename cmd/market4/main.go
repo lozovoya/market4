@@ -68,8 +68,6 @@ func execute(addr, dsn, cacheDSN, privateJWTKey, publicJWTKey string) (err error
 	cachePool := cache2.InitCache(cacheDSN)
 	cache := cache2.NewRedisCache(cachePool)
 
-	authService := auth.NewAuthService(privateJWTKey, publicJWTKey)
-
 	shopCtx := context.Background()
 	shopPool, err := pgxpool.Connect(shopCtx, dsn)
 	if err != nil {
@@ -113,8 +111,9 @@ func execute(addr, dsn, cacheDSN, privateJWTKey, publicJWTKey string) (err error
 		return err
 	}
 	usersRepo := repository.NewUsersRepo(usersPool)
-	usersController := controllers.NewUser(usersRepo, *authService)
+	usersController := controllers.NewUser(usersRepo)
 
+	authService := auth.NewAuthService(privateJWTKey, publicJWTKey, usersRepo)
 	authController := controllers.NewAuth(*authService, usersRepo)
 
 	router := httpserver.NewRouter(chi.NewRouter(),

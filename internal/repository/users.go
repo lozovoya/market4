@@ -58,17 +58,17 @@ func (u *usersRepo) EditUser(ctx context.Context, user *model.User) (*model.User
 	return &editedUser, nil
 }
 
-func (u *usersRepo) GetUserRole(ctx context.Context, login string) (int, error) {
-	dbReq := "SELECT roles.id FROM users " +
-		"WHERE users.login = $1"
-	var role int
+func (u *usersRepo) GetUserRole(ctx context.Context, login string) (string, error) {
+	dbReq := "SELECT roles.name FROM users, roles " +
+		"WHERE users.login = $1 AND users.role = roles.id"
+	var role string
 	err := u.pool.QueryRow(ctx, dbReq, login).Scan(&role)
 	if err != nil {
 		if strings.Contains(err.Error(), "no rows in result set") {
-			return 0, nil
+			return "", nil
 		}
 		log.Println(fmt.Errorf("GetUserRole: %w", err))
-		return 0, err
+		return "", err
 	}
 	return role, nil
 }

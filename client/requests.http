@@ -25,8 +25,8 @@ POST http://localhost:9999/api/v1/auth
 Content-Type: application/json
 
 {
-  "login": "user4",
-  "password": "user1password"
+  "login": "user3",
+  "password": "user3password"
 }
 
 
@@ -126,7 +126,9 @@ Content-Type: application/json
 
 POST http://localhost:9999/api/v1/products
 Content-Type: application/json
-Authorization: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJJRCI6MywiUm9sZSI6IkFETUlOIiwiZXhwIjoxNjMwNjE5NDk4LCJpYXQiOjE2MzA2MTU4OTh9.k4_UM1JL2JsC0f3qvkuA5Q261iyREKbwGEDyqkb17Wm-F1_q0Rb4i98h9wi6tawhUag-jgYo2pP3eoly7Hv8HjW18Bwle4RActTGxWeJdPSRQCGT1YCQ4yNUqUeDxDjjqwXtN4NcrvD5Oh-MO4_wgm97ZhZnzHuGCVybzVIDI7TohGVMN9hQ7QChWF48j0G50HNhnABD4zTB_vR_0q2_NAzGA6Q99SyhQV0p7f3Pn62DblU20b_vbb8ya46IjJi1bynw3DzAl9X-UVsW56MbogcRwS7oU7YlU5ktX21wVLdjIe1e8LFNfpFSru9h5GribCtjOS_bDb5jtG7y4IBAPQ
+Authorization: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJJRCI6NCwiUm9sZSI6IlVTRVIiLCJleHAiOjE2MzEwMTM2MDgsImlhdCI6MTYzMTAxMDAwOH0.LPZgxY6u4yn9XFC8SuxI2139kF1Mj4-iRZvPBzwUnQ1lk5jjIlgPOsb2Cf7y1jzg7PNrfvkJcJzkUCscPW5iBDfV7WKd6kdOOFQix0JWJUGee-NhFHcBI863p1dN41bC3kJRbjnib1KEnTW5N5qb8uHKDQgr70EveBUL859lI-d9KLa-1YW5j0sxFQLHz73x5vr_mNJ14GeQHDcs2neaCGkj-td-1mVQZ0m7bBST7KJ59i0fH5eVrrzrLBBS-5v-shQfLeH30L6FNe7ie05K2RxfR_G8pw_doeG1F26EqKbkbzDu5twu2G6wRuzCgdEO74GIyB7ck8VS95d5NPpeWg
+
+
 
 {
   "sku":"3003",

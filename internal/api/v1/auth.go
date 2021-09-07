@@ -52,8 +52,8 @@ func (a *Auth) Token(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	if id == 0 || role == 0 {
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	if id == 0 || role == "" {
+		http.Error(writer, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		return
 	}
 
