@@ -4,19 +4,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"market4/internal/api/auth"
 	"market4/internal/model"
 	"market4/internal/repository"
 	"net/http"
 )
 
 type Users struct {
-	usersRepo   repository.Users
-	authService auth.AuthService
+	usersRepo repository.Users
 }
 
-func NewUser(usersRepo repository.Users, authService auth.AuthService) *Users {
-	return &Users{usersRepo: usersRepo, authService: authService}
+func NewUser(usersRepo repository.Users) *Users {
+	return &Users{usersRepo: usersRepo}
 }
 
 func (u *Users) AddUser(writer http.ResponseWriter, request *http.Request) {
@@ -71,43 +69,4 @@ func (u *Users) EditUser(writer http.ResponseWriter, request *http.Request) {
 		log.Println(fmt.Errorf("EditUser: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
-}
-
-func (u *Users) Token(writer http.ResponseWriter, request *http.Request) {
-	var data *model.User
-	err := json.NewDecoder(request.Body).Decode(&data)
-	if err != nil {
-		log.Println(fmt.Errorf("Token: %w", err))
-		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
-	if IsEmpty(data.Login) || IsEmpty(data.Password) || IsEmpty(data.Role) {
-		log.Println("field is empty")
-		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
-
-	if ok := u.usersRepo.CheckCreds(request.Context(), data); !ok {
-		http.Error(writer, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-		return
-	}
-
-	if ok := u.usersRepo.IsUserHasRole(request.Context(), data); !ok {
-		http.Error(writer, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-		return
-	}
-
-	token, err := u.authService.GetToken(request.Context(), data.ID, data.Role)
-	if err != nil {
-		log.Println(fmt.Errorf("Token: %w", err))
-		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
-	writer.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(writer).Encode(token)
-	if err != nil {
-		log.Println(fmt.Errorf("Token: %w", err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	}
-
 }

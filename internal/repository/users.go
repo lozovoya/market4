@@ -58,33 +58,19 @@ func (u *usersRepo) EditUser(ctx context.Context, user *model.User) (*model.User
 	return &editedUser, nil
 }
 
-func (u *usersRepo) GetHash(ctx context.Context, login string) (string, error) {
-	dbReq := "SELECT password FROM users WHERE login = $1"
-	var hash string
-	err := u.pool.QueryRow(ctx, dbReq, login).Scan(&hash)
+func (u *usersRepo) GetUserRole(ctx context.Context, login string) (int, error) {
+	dbReq := "SELECT roles.id FROM users " +
+		"WHERE users.login = $1"
+	var role int
+	err := u.pool.QueryRow(ctx, dbReq, login).Scan(&role)
 	if err != nil {
 		if strings.Contains(err.Error(), "no rows in result set") {
-			return "", nil
+			return 0, nil
 		}
-		fmt.Errorf("GetHash: %w", err)
-		return "", err
+		log.Println(fmt.Errorf("GetUserRole: %w", err))
+		return 0, err
 	}
-	return hash, nil
-}
-
-func (u *usersRepo) IsUserHasRole(ctx context.Context, user *model.User) bool {
-	dbReq := "SELECT roles.name FROM users, roles " +
-		"WHERE users.login = $1 AND users.role = roles.id"
-	var reply string
-	err := u.pool.QueryRow(ctx, dbReq, user.Login).Scan(&reply)
-	if err != nil {
-		log.Println(fmt.Errorf("IsUserHasRole: %w", err))
-		return false
-	}
-	if reply != user.Role {
-		return false
-	}
-	return true
+	return role, nil
 }
 
 func (u *usersRepo) CheckCreds(ctx context.Context, user *model.User) bool {
@@ -102,4 +88,32 @@ func (u *usersRepo) CheckCreds(ctx context.Context, user *model.User) bool {
 	}
 
 	return true
+}
+
+func (u *usersRepo) GetUserID(ctx context.Context, login string) (int, error) {
+	dbReq := "SELECT id FROM users WHERE login = $1"
+	var id int
+	err := u.pool.QueryRow(ctx, dbReq, login).Scan(&id)
+	if err != nil {
+		if strings.Contains(err.Error(), "no rows in result set") {
+			return 0, nil
+		}
+		fmt.Errorf("GetUserID: %w", err)
+		return 0, err
+	}
+	return id, nil
+}
+
+func (u usersRepo) GetRoleByID(ctx context.Context, roleID int) (string, error) {
+	dbReq := "SELECT name FROM roles WHERE id = $1"
+	var role string
+	err := u.pool.QueryRow(ctx, dbReq, roleID).Scan(&role)
+	if err != nil {
+		if strings.Contains(err.Error(), "no rows in result set") {
+			return "", nil
+		}
+		fmt.Errorf("GetRoleByID: %w", err)
+		return "", err
+	}
+	return role, nil
 }

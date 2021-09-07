@@ -54,16 +54,21 @@ func main() {
 		privateJWTKey = PRIVATEKEY
 	}
 
-	if err := execute(net.JoinHostPort(host, port), dsn, cacheDSN, privateJWTKey); err != nil {
+	publicJWTKey, ok := os.LookupEnv("publicJWTKey")
+	if !ok {
+		publicJWTKey = PUBLICKEY
+	}
+
+	if err := execute(net.JoinHostPort(host, port), dsn, cacheDSN, privateJWTKey, publicJWTKey); err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
 }
-func execute(addr, dsn, cacheDSN, privateJWTKey string) (err error) {
+func execute(addr, dsn, cacheDSN, privateJWTKey, publicJWTKey string) (err error) {
 	cachePool := cache2.InitCache(cacheDSN)
 	cache := cache2.NewRedisCache(cachePool)
 
-	authService := auth.NewAuthService(privateJWTKey)
+	authService := auth.NewAuthService(privateJWTKey, publicJWTKey)
 
 	shopCtx := context.Background()
 	shopPool, err := pgxpool.Connect(shopCtx, dsn)
@@ -110,12 +115,15 @@ func execute(addr, dsn, cacheDSN, privateJWTKey string) (err error) {
 	usersRepo := repository.NewUsersRepo(usersPool)
 	usersController := controllers.NewUser(usersRepo, *authService)
 
+	authController := controllers.NewAuth(*authService, usersRepo)
+
 	router := httpserver.NewRouter(chi.NewRouter(),
 		shopController,
 		categoryController,
 		productController,
 		priceController,
-		usersController)
+		usersController,
+		authController)
 
 	server := http.Server{
 		Addr:    addr,

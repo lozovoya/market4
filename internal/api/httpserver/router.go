@@ -15,7 +15,8 @@ func NewRouter(
 	categoryController *v1.Category,
 	productController *v1.Product,
 	priceController *v1.Price,
-	usersController *v1.Users) chi.Mux {
+	usersController *v1.Users,
+	authController *v1.Auth) chi.Mux {
 	mux.Use(middleware.Logger)
 	mux.Route("/api/v1", func(router chi.Router) {
 		router.Get("/shops", shopController.ListAllShops)
@@ -40,7 +41,8 @@ func NewRouter(
 
 		router.Post("/users", usersController.AddUser)
 		router.Put("/users", usersController.EditUser)
-		router.Get("/users/token", usersController.Token)
+
+		router.Post("/auth", authController.Token)
 	})
 
 	log.Println("new router is activated")

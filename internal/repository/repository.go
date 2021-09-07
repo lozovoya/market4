@@ -40,7 +40,8 @@ type Price interface {
 type Users interface {
 	AddUser(ctx context.Context, u *model.User) (*model.User, error)
 	EditUser(ctx context.Context, u *model.User) (*model.User, error)
-	GetHash(ctx context.Context, login string) (string, error)
-	IsUserHasRole(ctx context.Context, u *model.User) bool
+	GetUserRole(ctx context.Context, login string) (int, error)
 	CheckCreds(ctx context.Context, u *model.User) bool
+	GetUserID(ctx context.Context, login string) (int, error)
+	GetRoleByID(ctx context.Context, roleID int) (string, error)
 }
