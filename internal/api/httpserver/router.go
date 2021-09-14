@@ -19,28 +19,32 @@ func NewRouter(
 	authController *v1.Auth) chi.Mux {
 	mux.Use(middleware.Logger)
 	mux.Route("/api/v1", func(router chi.Router) {
-		router.Get("/shops", shopController.ListAllShops)
-		router.Post("/shops", shopController.AddShop)
-		router.Put("/shops", shopController.EditShop)
+		router.With(md.Auth("USER")).Get("/shops", shopController.ListAllShops)
+		router.With(md.Auth("ADMIN")).Post("/shops", shopController.AddShop)
+		router.With(md.Auth("ADMIN")).Put("/shops", shopController.EditShop)
 
-		router.Get("/categories", categoryController.ListAllCategories)
-		router.Post("/categories", categoryController.AddCategory)
-		router.Put("/categories", categoryController.EditCategory)
+		router.With(md.Auth("USER")).Get("/categories", categoryController.ListAllCategories)
+		router.With(md.Auth("ADMIN")).Post("/categories", categoryController.AddCategory)
+		router.With(md.Auth("ADMIN")).Put("/categories", categoryController.EditCategory)
 
 		router.With(md.Auth("ADMIN")).Post("/products", productController.AddProduct)
-		router.Put("/products", productController.EditProduct)
-		router.Get("/products", productController.ListAllProducts)
+		router.With(md.Auth("ADMIN")).Put("/products", productController.EditProduct)
+		router.With(md.Auth("USER")).Get("/products", productController.ListAllProducts)
 
-		router.Post("/prices", priceController.AddPrice)
-		router.Put("/prices", priceController.EditPrice)
-		router.Get("/prices", priceController.ListAllPrices)
+		router.With(md.Auth("ADMIN")).Post("/prices", priceController.AddPrice)
+		router.With(md.Auth("ADMIN")).Put("/prices", priceController.EditPrice)
+		router.With(md.Auth("USER")).Get("/prices", priceController.ListAllPrices)
 
-		router.Get("/categories/{categoryID:.+}/products", productController.SearchProductsByCategory)
-		router.Get("/search/{product_name:.+}", productController.SearchProductByName)
-		router.Get("/shops/{shopID:.+}/products", productController.SearchActiveProductsOfShop)
+		router.With(md.Auth("USER")).Get("/categories/{categoryID:.+}/products", productController.SearchProductsByCategory)
+		router.With(md.Auth("USER")).Get("/search/{product_name:.+}", productController.SearchProductByName)
+		router.With(md.Auth("USER")).Get("/shops/{shopID:.+}/products", productController.SearchActiveProductsOfShop)
 
-		router.Post("/users", usersController.AddUser)
-		router.Put("/users", usersController.EditUser)
+		router.With(md.Auth("ADMIN")).Post("/users", usersController.AddUser)
+		//router.Post("/users", usersController.AddUser)
+		router.With(md.Auth("ADMIN")).Put("/users", usersController.EditUser)
+		//router.Put("/users", usersController.EditUser)
+		router.With(md.Auth("ADMIN")).Put("/users/addrole", usersController.AddRole)
+		router.With(md.Auth("ADMIN")).Put("/users/removerole", usersController.RemoveRole)
 
 		router.Post("/auth", authController.Token)
 	})

@@ -1,39 +1,60 @@
-### добавить пользователя
-
-POST http://localhost:9999/api/v1/users
-Content-Type: application/json
-
-{
-  "login":"user4",
-  "password": "user1password",
-  "role": "ADMIN"
-}
-
-### редактировать пользователя
-
-PUT http://localhost:9999/api/v1/users
-Content-Type: application/json
-
-{
-  "login":"user3",
-  "password": "user3password",
-  "role": "USER"
-}
-
 ### запрос токена
 POST http://localhost:9999/api/v1/auth
 Content-Type: application/json
 
 {
   "login": "user3",
-  "password": "user3password"
+  "password": "user1password"
 }
 
+> {%
+client.test("Request executed successfully", function() {
+  client.assert(response.status === 200, "Response status is not 200");
+  client.assert(response.contentType.mimeType === "application/json", "Expected 'application/json' but received '" + response.contentType.mimeType + "'");
+  client.global.set("token", response.body.token);
+});
+%}
+
+
+### добавить пользователя
+
+POST http://localhost:9999/api/v1/users
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "login":"user7",
+  "password": "user1password",
+  "role": "USER"
+}
+
+### редактировать пользователя
+
+PUT http://localhost:9999/api/v1/users
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "login":"user6",
+  "password": "user6password"
+}
+
+### редактировать роль пользователя
+
+PUT http://localhost:9999/api/v1/users/addrole
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "login":"user6",
+  "role": "ADMIN"
+}
 
 ### добавить магазин
 
 POST http://localhost:9999/api/v1/shops
 Content-Type: application/json
+Authorization: {{token}}
 
 {
   "name":"тестовый магазин 1",
@@ -44,6 +65,7 @@ Content-Type: application/json
 
 PUT http://localhost:9999/api/v1/shops
 Content-Type: application/json
+Authorization: {{token}}
 
 {
   "id":"2",
@@ -56,11 +78,13 @@ Content-Type: application/json
 ### получить полный список магазинов
 
 GET http://localhost:9999/api/v1/shops
+Authorization: {{token}}
 
 ### добавить категорию
 
 POST http://localhost:9999/api/v1/categories
 Content-Type: application/json
+Authorization: {{token}}
 
 {
   "name":"химоза"
@@ -70,6 +94,7 @@ Content-Type: application/json
 
 PUT http://localhost:9999/api/v1/categories
 Content-Type: application/json
+Authorization: {{token}}
 
 {
   "id":"2",
@@ -79,11 +104,13 @@ Content-Type: application/json
 ### получить полный список категорий
 
 GET http://localhost:9999/api/v1/categories
+Authorization: {{token}}
 
 ### добавить продукт 1
 
 POST http://localhost:9999/api/v1/products
 Content-Type: application/json
+Authorization: {{token}}
 
 {
   "sku":"3001",
@@ -105,6 +132,7 @@ Content-Type: application/json
 
 POST http://localhost:9999/api/v1/products
 Content-Type: application/json
+Authorization: {{token}}
 
 {
   "sku":"3002",
@@ -126,9 +154,7 @@ Content-Type: application/json
 
 POST http://localhost:9999/api/v1/products
 Content-Type: application/json
-Authorization: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJJRCI6NCwiUm9sZSI6IlVTRVIiLCJleHAiOjE2MzEwMTM2MDgsImlhdCI6MTYzMTAxMDAwOH0.LPZgxY6u4yn9XFC8SuxI2139kF1Mj4-iRZvPBzwUnQ1lk5jjIlgPOsb2Cf7y1jzg7PNrfvkJcJzkUCscPW5iBDfV7WKd6kdOOFQix0JWJUGee-NhFHcBI863p1dN41bC3kJRbjnib1KEnTW5N5qb8uHKDQgr70EveBUL859lI-d9KLa-1YW5j0sxFQLHz73x5vr_mNJ14GeQHDcs2neaCGkj-td-1mVQZ0m7bBST7KJ59i0fH5eVrrzrLBBS-5v-shQfLeH30L6FNe7ie05K2RxfR_G8pw_doeG1F26EqKbkbzDu5twu2G6wRuzCgdEO74GIyB7ck8VS95d5NPpeWg
-
-
+Authorization: {{token}}
 
 {
   "sku":"3003",
@@ -150,6 +176,7 @@ Authorization: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJJRCI6NCwiUm9sZSI6IlVTRVIi
 
 POST http://localhost:9999/api/v1/products
 Content-Type: application/json
+Authorization: {{token}}
 
 {
   "sku":"3004",
@@ -171,6 +198,7 @@ Content-Type: application/json
 
 POST http://localhost:9999/api/v1/products
 Content-Type: application/json
+Authorization: {{token}}
 
 {
   "sku":"3005",
@@ -192,6 +220,7 @@ Content-Type: application/json
 
 PUT http://localhost:9999/api/v1/products
 Content-Type: application/json
+Authorization: {{token}}
 
 {
   "sku":"3003",
@@ -204,11 +233,13 @@ Content-Type: application/json
 
 ### получить полный список продуктов
 GET http://localhost:9999/api/v1/products
+Authorization: {{token}}
 
 ### добавить цену
 
 POST http://localhost:9999/api/v1/prices
-Content-Type: application/json
+Content-Type: application/json\
+Authorization: {{token}}
 
 {
   "sale_price":"1000",
@@ -221,6 +252,7 @@ Content-Type: application/json
 ### редактировать цену
 PUT http://localhost:9999/api/v1/prices
 Content-Type: application/json
+Authorization: {{token}}
 
 {
 "id":"40",
@@ -233,12 +265,16 @@ Content-Type: application/json
 
 ### получить полный список цен
 GET http://localhost:9999/api/v1/prices
+Authorization: {{token}}
 
 ### получить список продуктов по категории
 GET http://localhost:9999/api/v1/categories/4/products
+Authorization: {{token}}
 
 ### получить продукт по имени
 GET http://localhost:9999/api/v1/search/подушка
+Authorization: {{token}}
 
 ### получить список активных продуктов магазина
 GET http://localhost:9999/api/v1/shops/3/products
+Authorization: {{token}}

@@ -1,7 +1,6 @@
 package md
 
 import (
-	//"context"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"io/ioutil"
@@ -50,11 +49,15 @@ func Auth(role string) func(handler http.Handler) http.Handler {
 				http.Error(writer, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
 			}
-			if claims.Role != role {
-				http.Error(writer, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-				return
+
+			for _, r := range claims.Roles {
+				if r == role {
+					handler.ServeHTTP(writer, request)
+					return
+				}
 			}
-			handler.ServeHTTP(writer, request)
+			http.Error(writer, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return
 		})
 	}
 }

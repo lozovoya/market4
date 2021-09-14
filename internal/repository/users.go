@@ -19,8 +19,8 @@ func NewUsersRepo(pool *pgxpool.Pool) Users {
 }
 
 func (u *usersRepo) AddUser(ctx context.Context, user *model.User) (*model.User, error) {
-	dbReq := "INSERT INTO users (login, password, role) " +
-		"VALUES ($1, $2, (SELECT id FROM roles WHERE name = $3)) " +
+	dbReq := "INSERT INTO users (login, password) " +
+		"VALUES ($1, $2) " +
 		"RETURNING id"
 	var addedUser model.User
 	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), 10)
@@ -28,7 +28,13 @@ func (u *usersRepo) AddUser(ctx context.Context, user *model.User) (*model.User,
 		fmt.Errorf("AddUser: %w", err)
 		return nil, err
 	}
-	err = u.pool.QueryRow(ctx, dbReq, user.Login, hash, user.Role).Scan(&user.ID)
+	err = u.pool.QueryRow(ctx, dbReq, user.Login, hash).Scan(&addedUser.ID)
+	if err != nil {
+		fmt.Errorf("AddUser: %w", err)
+		return nil, err
+	}
+
+	err = u.AddRole(ctx, user.Login, user.Role)
 	if err != nil {
 		fmt.Errorf("AddUser: %w", err)
 		return nil, err
@@ -38,16 +44,15 @@ func (u *usersRepo) AddUser(ctx context.Context, user *model.User) (*model.User,
 
 func (u *usersRepo) EditUser(ctx context.Context, user *model.User) (*model.User, error) {
 	dbReq := "UPDATE users " +
-		"SET password = $1, " +
-		"role = (SELECT id FROM roles WHERE name = $2) " +
-		"WHERE login = $3 RETURNING id"
+		"SET password = $1 " +
+		"WHERE login = $2 RETURNING id"
 	var editedUser model.User
 	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), 10)
 	if err != nil {
 		fmt.Errorf("AddUser: %w", err)
 		return nil, err
 	}
-	err = u.pool.QueryRow(ctx, dbReq, hash, user.Role, user.Login).Scan(&editedUser.ID)
+	err = u.pool.QueryRow(ctx, dbReq, hash, user.Login).Scan(&editedUser.ID)
 	if err != nil {
 		if strings.Contains(err.Error(), "no rows in result set") {
 			return &editedUser, nil
@@ -55,22 +60,61 @@ func (u *usersRepo) EditUser(ctx context.Context, user *model.User) (*model.User
 		fmt.Errorf("EditUser: %w", err)
 		return &editedUser, err
 	}
+
 	return &editedUser, nil
 }
 
-func (u *usersRepo) GetUserRole(ctx context.Context, login string) (string, error) {
-	dbReq := "SELECT roles.name FROM users, roles " +
-		"WHERE users.login = $1 AND users.role = roles.id"
-	var role string
-	err := u.pool.QueryRow(ctx, dbReq, login).Scan(&role)
+func (u *usersRepo) AddRole(ctx context.Context, login string, role string) error {
+
+	dbReq := "INSERT INTO userroles (user_id, role_id) " +
+		"VALUES ((SELECT id FROM users WHERE login = $1), (SELECT id FROM roles WHERE name = $2))"
+	_, err := u.pool.Exec(ctx, dbReq, login, role)
+	if err != nil {
+		fmt.Errorf("AddRole: %w", err)
+		return err
+	}
+	return nil
+}
+
+func (u *usersRepo) RemoveRole(ctx context.Context, login string, role string) error {
+	dbReq := "DELETE FROM userroles " +
+		"WHERE user_id = (SELECT id FROM users WHERE login = $1) " +
+		"AND role_id = (SELECT id FROM roles WHERE name = $2)"
+	_, err := u.pool.Exec(ctx, dbReq, login, role)
+	if err != nil {
+		fmt.Errorf("RemoveRole: %w", err)
+		return err
+	}
+	return nil
+}
+
+func (u *usersRepo) GetUserRolesByID(ctx context.Context, id int) ([]string, error) {
+	dbReq := "SELECT role_id FROM userroles WHERE user_id = $1"
+	var roles = make([]string, 0)
+	rows, err := u.pool.Query(ctx, dbReq, id)
 	if err != nil {
 		if strings.Contains(err.Error(), "no rows in result set") {
-			return "", nil
+			return roles, nil
 		}
-		log.Println(fmt.Errorf("GetUserRole: %w", err))
-		return "", err
+		log.Println(fmt.Errorf("GetUserRoleByID: %w", err))
+		return roles, err
 	}
-	return role, nil
+	for rows.Next() {
+		var roleID int
+		var roleName string
+		rows.Scan(&roleID)
+		dbReq = "SELECT name FROM roles WHERE id = $1"
+		err := u.pool.QueryRow(ctx, dbReq, roleID).Scan(&roleName)
+		if err != nil {
+			if strings.Contains(err.Error(), "no rows in result set") {
+				continue
+			}
+			log.Println(fmt.Errorf("GetUserRoleByID: %w", err))
+			return roles, err
+		}
+		roles = append(roles, roleName)
+	}
+	return roles, nil
 }
 
 func (u *usersRepo) CheckCreds(ctx context.Context, user *model.User) bool {

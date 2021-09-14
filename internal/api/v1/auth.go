@@ -10,6 +10,10 @@ import (
 	"net/http"
 )
 
+type Token struct {
+	Token string `json:"token"`
+}
+
 type Auth struct {
 	authService auth.AuthService
 	usersRepo   repository.Users
@@ -45,26 +49,27 @@ func (a *Auth) Token(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	role, err := a.usersRepo.GetUserRole(request.Context(), data.Login)
+	roles, err := a.usersRepo.GetUserRolesByID(request.Context(), id)
 	if err != nil {
 		log.Println(fmt.Errorf("Token: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	if id == 0 || role == "" {
+	if id == 0 || len(roles) == 0 {
 		http.Error(writer, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		return
 	}
 
-	token, err := a.authService.GetToken(request.Context(), id, role)
+	var reply Token
+	reply.Token, err = a.authService.GetToken(request.Context(), id, roles)
 	if err != nil {
 		log.Println(fmt.Errorf("Token: %w", err))
 		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 	writer.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(writer).Encode(token)
+	err = json.NewEncoder(writer).Encode(reply)
 	if err != nil {
 		log.Println(fmt.Errorf("Token: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

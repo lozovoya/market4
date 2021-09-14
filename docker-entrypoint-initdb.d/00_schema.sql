@@ -75,8 +75,12 @@ CREATE TABLE users
 (
     id BIGSERIAL PRIMARY KEY,
     login TEXT NOT NULL UNIQUE,
-    password TEXT NOT NULL,
-    role BIGINT REFERENCES roles
+    password TEXT NOT NULL
 );
 
-
+CREATE TABLE userroles
+(
+    user_id BIGINT NOT NULL REFERENCES users,
+    role_id BIGINT NOT NULL REFERENCES roles,
+    PRIMARY KEY (user_id, role_id)
+);

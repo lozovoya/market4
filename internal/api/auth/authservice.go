@@ -54,16 +54,16 @@ func NewAuthService(privateKey, publicKey string, usersRepo repository.Users) *A
 }
 
 type Payload struct {
-	ID   int
-	Role string
+	ID    int
+	Roles []string
 	jwt.StandardClaims
 }
 
-func (a *AuthService) GetToken(ctx context.Context, id int, role string) (string, error) {
+func (a *AuthService) GetToken(ctx context.Context, id int, roles []string) (string, error) {
 
 	payload := Payload{
-		ID:   id,
-		Role: role,
+		ID:    id,
+		Roles: roles,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Hour).Unix(),
 			IssuedAt:  time.Now().Unix(),
@@ -77,25 +77,26 @@ func (a *AuthService) GetToken(ctx context.Context, id int, role string) (string
 	return token, nil
 }
 
-func (a *AuthService) GetRoleFromToken(ctx context.Context, token string) (string, error) {
+func (a *AuthService) GetRoleFromToken(ctx context.Context, token string) ([]string, error) {
 	payload, err := jwt.ParseWithClaims(token, &Payload{}, func(token *jwt.Token) (interface{}, error) {
 		return a.publicKey, nil
 	})
+	var roles = make([]string, 0)
 	if err != nil {
 		log.Println(fmt.Errorf("CheckToken: %w", err))
-		return "", err
+		return roles, err
 	}
 	if !payload.Valid {
 		log.Println(fmt.Errorf("CheckToken: %w", err))
-		return "", err
+		return roles, err
 	}
 	claims, ok := payload.Claims.(*Payload)
 	if !ok {
 		log.Println(fmt.Errorf("CheckToken: %w", err))
-		return "", err
+		return roles, err
 	}
 
-	return claims.Role, nil
+	return claims.Roles, nil
 }
 
 func (a *AuthService) CheckUserRole(ctx context.Context, roleID int) (string, error) {
