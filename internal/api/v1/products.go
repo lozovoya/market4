@@ -19,12 +19,11 @@ type ProductDTO struct {
 	Name        string    `json:"name,omitempty"`
 	Type        string    `json:"type,omitempty"`
 	Description string    `json:"description,omitempty"`
-	IsActive    bool      `json:"is_active,string"`
+	IsActive    bool      `json:"is_active,string,omitempty"`
 	Shop_ID     int       `json:"shop_id,string,omitempty"`
 	Category_ID int       `json:"category_id,string,omitempty"`
 	Price       *PriceDTO `json:"price,omitempty"`
 }
-
 type Product struct {
 	productRepo repository.Product
 	priceRepo   repository.Price
