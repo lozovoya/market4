@@ -1,7 +1,8 @@
+CREATE EXTENSION pgcrypto;
 -- товары
 CREATE TABLE products
 (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+    id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     sku         TEXT NOT NULL,
     name        TEXT NOT NULL,
     uri         TEXT NOT NULL,
@@ -68,7 +69,7 @@ CREATE TABLE presence
 CREATE TABLE roles
 (
     id BIGSERIAL PRIMARY KEY,
-    role TEXT NOT NULL UNIQUE
+    name TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE users

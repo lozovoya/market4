@@ -35,7 +35,7 @@ Content-Type: application/json
 Authorization: {{token}}
 
 {
-  "login":"user6",
+  "login":"user7",
   "password": "user6password"
 }
 
@@ -46,7 +46,7 @@ Content-Type: application/json
 Authorization: {{token}}
 
 {
-  "login":"user6",
+  "login":"user7",
   "role": "ADMIN"
 }
 
@@ -225,6 +225,7 @@ Authorization: {{token}}
 {
   "sku":"3003",
   "name": "подушка",
+  "is_active": "false",
   "price":
   {
     "sale_price":"9000"
@@ -255,7 +256,7 @@ Content-Type: application/json
 Authorization: {{token}}
 
 {
-"id":"40",
+"id":"4",
 "sale_price":"1000",
 "factory_price": "900",
 "discount_price": "20",
@@ -268,7 +269,7 @@ GET http://localhost:9999/api/v1/prices
 Authorization: {{token}}
 
 ### получить список продуктов по категории
-GET http://localhost:9999/api/v1/categories/4/products
+GET http://localhost:9999/api/v1/categories/1/products
 Authorization: {{token}}
 
 ### получить продукт по имени
@@ -276,5 +277,5 @@ GET http://localhost:9999/api/v1/search/подушка
 Authorization: {{token}}
 
 ### получить список активных продуктов магазина
-GET http://localhost:9999/api/v1/shops/3/products
+GET http://localhost:9999/api/v1/shops/4/products
 Authorization: {{token}}

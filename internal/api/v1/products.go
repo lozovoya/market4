@@ -19,7 +19,7 @@ type ProductDTO struct {
 	Name        string    `json:"name,omitempty"`
 	Type        string    `json:"type,omitempty"`
 	Description string    `json:"description,omitempty"`
-	IsActive    bool      `json:"is_active,string,omitempty"`
+	IsActive    bool      `json:"is_active,string"`
 	Shop_ID     int       `json:"shop_id,string,omitempty"`
 	Category_ID int       `json:"category_id,string,omitempty"`
 	Price       *PriceDTO `json:"price,omitempty"`

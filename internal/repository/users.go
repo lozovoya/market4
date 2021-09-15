@@ -25,19 +25,16 @@ func (u *usersRepo) AddUser(ctx context.Context, user *model.User) (*model.User,
 	var addedUser model.User
 	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), 10)
 	if err != nil {
-		fmt.Errorf("AddUser: %w", err)
-		return nil, err
+		return nil, fmt.Errorf("AddUser: %w", err)
 	}
 	err = u.pool.QueryRow(ctx, dbReq, user.Login, hash).Scan(&addedUser.ID)
 	if err != nil {
-		fmt.Errorf("AddUser: %w", err)
-		return nil, err
+		return nil, fmt.Errorf("AddUser: %w", err)
 	}
 
 	err = u.AddRole(ctx, user.Login, user.Role)
 	if err != nil {
-		fmt.Errorf("AddUser: %w", err)
-		return nil, err
+		return nil, fmt.Errorf("AddUser: %w", err)
 	}
 	return &addedUser, nil
 }
@@ -49,16 +46,14 @@ func (u *usersRepo) EditUser(ctx context.Context, user *model.User) (*model.User
 	var editedUser model.User
 	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), 10)
 	if err != nil {
-		fmt.Errorf("AddUser: %w", err)
-		return nil, err
+		return nil, fmt.Errorf("AddUser: %w", err)
 	}
 	err = u.pool.QueryRow(ctx, dbReq, hash, user.Login).Scan(&editedUser.ID)
 	if err != nil {
 		if strings.Contains(err.Error(), "no rows in result set") {
 			return &editedUser, nil
 		}
-		fmt.Errorf("EditUser: %w", err)
-		return &editedUser, err
+		return &editedUser, fmt.Errorf("EditUser: %w", err)
 	}
 
 	return &editedUser, nil
@@ -70,8 +65,7 @@ func (u *usersRepo) AddRole(ctx context.Context, login string, role string) erro
 		"VALUES ((SELECT id FROM users WHERE login = $1), (SELECT id FROM roles WHERE name = $2))"
 	_, err := u.pool.Exec(ctx, dbReq, login, role)
 	if err != nil {
-		fmt.Errorf("AddRole: %w", err)
-		return err
+		return fmt.Errorf("AddRole: %w", err)
 	}
 	return nil
 }
@@ -82,8 +76,7 @@ func (u *usersRepo) RemoveRole(ctx context.Context, login string, role string) e
 		"AND role_id = (SELECT id FROM roles WHERE name = $2)"
 	_, err := u.pool.Exec(ctx, dbReq, login, role)
 	if err != nil {
-		fmt.Errorf("RemoveRole: %w", err)
-		return err
+		return fmt.Errorf("RemoveRole: %w", err)
 	}
 	return nil
 }
@@ -96,21 +89,22 @@ func (u *usersRepo) GetUserRolesByID(ctx context.Context, id int) ([]string, err
 		if strings.Contains(err.Error(), "no rows in result set") {
 			return roles, nil
 		}
-		log.Println(fmt.Errorf("GetUserRoleByID: %w", err))
-		return roles, err
+		return roles, fmt.Errorf("GetUserRoleByID: %w", err)
 	}
 	for rows.Next() {
 		var roleID int
 		var roleName string
-		rows.Scan(&roleID)
+		err = rows.Scan(&roleID)
+		if err != nil {
+			return roles, fmt.Errorf("GetUserRoleByID: %w", err)
+		}
 		dbReq = "SELECT name FROM roles WHERE id = $1"
 		err := u.pool.QueryRow(ctx, dbReq, roleID).Scan(&roleName)
 		if err != nil {
 			if strings.Contains(err.Error(), "no rows in result set") {
 				continue
 			}
-			log.Println(fmt.Errorf("GetUserRoleByID: %w", err))
-			return roles, err
+			return roles, fmt.Errorf("GetUserRoleByID: %w", err)
 		}
 		roles = append(roles, roleName)
 	}
@@ -142,8 +136,7 @@ func (u *usersRepo) GetUserID(ctx context.Context, login string) (int, error) {
 		if strings.Contains(err.Error(), "no rows in result set") {
 			return 0, nil
 		}
-		fmt.Errorf("GetUserID: %w", err)
-		return 0, err
+		return 0, fmt.Errorf("GetUserID: %w", err)
 	}
 	return id, nil
 }
@@ -156,8 +149,7 @@ func (u usersRepo) GetRoleByID(ctx context.Context, roleID int) (string, error) 
 		if strings.Contains(err.Error(), "no rows in result set") {
 			return "", nil
 		}
-		fmt.Errorf("GetRoleByID: %w", err)
-		return "", err
+		return "", fmt.Errorf("GetRoleByID: %w", err)
 	}
 	return role, nil
 }
