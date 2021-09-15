@@ -12,7 +12,6 @@ import (
 func Auth(role string) func(handler http.Handler) http.Handler {
 	return func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-
 			publicKeySource, err := ioutil.ReadFile(auth.PUBLICKEY)
 			if err != nil {
 				log.Println(fmt.Errorf("Auth: %w", err))
@@ -57,7 +56,6 @@ func Auth(role string) func(handler http.Handler) http.Handler {
 				}
 			}
 			http.Error(writer, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			return
 		})
 	}
 }

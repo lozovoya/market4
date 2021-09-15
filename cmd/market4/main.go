@@ -18,14 +18,12 @@ import (
 )
 
 const (
-	defaultPort = "9999"
-	defaultHost = "0.0.0.0"
-	defaultDSN  = "postgres://app:pass@marketdb:5432/marketdb"
-	//defaultDSN = "postgres://app:pass@localhost:5432/marketdb"
+	defaultPort     = "9999"
+	defaultHost     = "0.0.0.0"
+	defaultDSN      = "postgres://app:pass@marketdb:5432/marketdb"
 	defaultCacheDSN = "redis://marketcache:6379/0"
-	//defaultCacheDSN = "redis://localhost:6379/0"
-	PRIVATEKEY = "./keys/private.key"
-	PUBLICKEY  = "./keys/public.key"
+	PRIVATEKEY      = "./keys/private.key"
+	PUBLICKEY       = "./keys/public.key"
 )
 
 func main() {

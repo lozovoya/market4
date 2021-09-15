@@ -58,9 +58,7 @@ func (u *usersRepo) EditUser(ctx context.Context, user *model.User) (*model.User
 
 	return &editedUser, nil
 }
-
-func (u *usersRepo) AddRole(ctx context.Context, login string, role string) error {
-
+func (u *usersRepo) AddRole(ctx context.Context, login, role string) error {
 	dbReq := "INSERT INTO userroles (user_id, role_id) " +
 		"VALUES ((SELECT id FROM users WHERE login = $1), (SELECT id FROM roles WHERE name = $2))"
 	_, err := u.pool.Exec(ctx, dbReq, login, role)
@@ -70,7 +68,7 @@ func (u *usersRepo) AddRole(ctx context.Context, login string, role string) erro
 	return nil
 }
 
-func (u *usersRepo) RemoveRole(ctx context.Context, login string, role string) error {
+func (u *usersRepo) RemoveRole(ctx context.Context, login, role string) error {
 	dbReq := "DELETE FROM userroles " +
 		"WHERE user_id = (SELECT id FROM users WHERE login = $1) " +
 		"AND role_id = (SELECT id FROM roles WHERE name = $2)"
@@ -98,8 +96,7 @@ func (u *usersRepo) GetUserRolesByID(ctx context.Context, id int) ([]string, err
 		if err != nil {
 			return roles, fmt.Errorf("GetUserRoleByID: %w", err)
 		}
-		dbReq = "SELECT name FROM roles WHERE id = $1"
-		err := u.pool.QueryRow(ctx, dbReq, roleID).Scan(&roleName)
+		roleName, err = u.GetRoleByID(ctx, roleID)
 		if err != nil {
 			if strings.Contains(err.Error(), "no rows in result set") {
 				continue

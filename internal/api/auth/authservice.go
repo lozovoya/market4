@@ -23,7 +23,6 @@ type AuthService struct {
 }
 
 func NewAuthService(privateKey, publicKey string, usersRepo repository.Users) *AuthService {
-
 	publicKeySource, err := ioutil.ReadFile(publicKey)
 	if err != nil {
 		log.Println(fmt.Errorf("Auth: %w", err))
@@ -60,7 +59,6 @@ type Payload struct {
 }
 
 func (a *AuthService) GetToken(ctx context.Context, id int, roles []string) (string, error) {
-
 	payload := Payload{
 		ID:    id,
 		Roles: roles,
@@ -102,8 +100,7 @@ func (a *AuthService) GetRoleFromToken(ctx context.Context, token string) ([]str
 func (a *AuthService) CheckUserRole(ctx context.Context, roleID int) (string, error) {
 	role, err := a.usersRepo.GetRoleByID(ctx, roleID)
 	if err != nil {
-		fmt.Errorf("CheckUserRole: %w", err)
-		return "", err
+		return "", fmt.Errorf("CheckUserRole: %w", err)
 	}
 	return role, nil
 }

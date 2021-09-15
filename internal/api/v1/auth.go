@@ -74,5 +74,4 @@ func (a *Auth) Token(writer http.ResponseWriter, request *http.Request) {
 		log.Println(fmt.Errorf("Token: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
-
 }

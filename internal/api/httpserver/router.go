@@ -40,9 +40,7 @@ func NewRouter(
 		router.With(md.Auth("USER")).Get("/shops/{shopID:.+}/products", productController.SearchActiveProductsOfShop)
 
 		router.With(md.Auth("ADMIN")).Post("/users", usersController.AddUser)
-		//router.Post("/users", usersController.AddUser)
 		router.With(md.Auth("ADMIN")).Put("/users", usersController.EditUser)
-		//router.Put("/users", usersController.EditUser)
 		router.With(md.Auth("ADMIN")).Put("/users/addrole", usersController.AddRole)
 		router.With(md.Auth("ADMIN")).Put("/users/removerole", usersController.RemoveRole)
 
