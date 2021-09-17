@@ -7,5 +7,5 @@ type Product struct {
 	Type        string `json:"type,omitempty"`
 	URI         string `json:"uri,omitempty"`
 	Description string `json:"description,omitempty"`
-	IsActive    bool   `json:"is_active,omitempty"`
+	IsActive    bool   `json:"is_active"`
 }

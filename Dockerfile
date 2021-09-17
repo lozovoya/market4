@@ -12,6 +12,5 @@ RUN chmod +x /wait
 COPY --from=build /market/market /market/market
 COPY ./keys/private.key /keys/private.key
 COPY ./keys/public.key /keys/public.key
-ENTRYPOINT ["/market/market"]
 EXPOSE 9999
 

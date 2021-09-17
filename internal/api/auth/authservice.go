@@ -12,8 +12,7 @@ import (
 )
 
 const (
-	PRIVATEKEY = "./keys/private.key"
-	PUBLICKEY  = "./keys/public.key"
+	PUBLICKEY = "./keys/public.key"
 )
 
 type AuthService struct {
