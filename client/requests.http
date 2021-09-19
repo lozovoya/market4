@@ -236,20 +236,6 @@ Authorization: {{token}}
 GET http://localhost:9999/api/v1/products
 Authorization: {{token}}
 
-### добавить цену
-
-POST http://localhost:9999/api/v1/prices
-Content-Type: application/json\
-Authorization: {{token}}
-
-{
-  "sale_price":"1000",
-  "factory_price": "900",
-  "discount_price": "10",
-  "is_active": "true",
-  "product_id": "21e370aa-f15e-42e8-bd39-b7306e595420"
-}
-
 ### редактировать цену
 PUT http://localhost:9999/api/v1/prices
 Content-Type: application/json
