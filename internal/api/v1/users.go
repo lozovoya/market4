@@ -41,6 +41,7 @@ func (u *Users) AddUser(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		log.Println(fmt.Errorf("AddUser: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -68,6 +69,7 @@ func (u *Users) EditUser(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		log.Println(fmt.Errorf("EditUser: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 }
 

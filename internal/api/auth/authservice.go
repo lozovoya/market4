@@ -57,7 +57,7 @@ type Payload struct {
 	jwt.StandardClaims
 }
 
-func (a *AuthService) GetToken(ctx context.Context, id int, roles []string) (string, error) {
+func (a *AuthService) GetToken(id int, roles []string) (string, error) {
 	payload := Payload{
 		ID:    id,
 		Roles: roles,
@@ -74,7 +74,7 @@ func (a *AuthService) GetToken(ctx context.Context, id int, roles []string) (str
 	return token, nil
 }
 
-func (a *AuthService) GetRoleFromToken(ctx context.Context, token string) ([]string, error) {
+func (a *AuthService) GetRoleFromToken(token string) ([]string, error) {
 	payload, err := jwt.ParseWithClaims(token, &Payload{}, func(token *jwt.Token) (interface{}, error) {
 		return a.publicKey, nil
 	})

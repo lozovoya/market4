@@ -59,6 +59,7 @@ func (p *Product) AddProduct(writer http.ResponseWriter, request *http.Request) 
 	if err != nil {
 		log.Println(fmt.Errorf("addProduct: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	var editedPrice *model.Price
@@ -75,6 +76,7 @@ func (p *Product) AddProduct(writer http.ResponseWriter, request *http.Request) 
 		if err != nil {
 			log.Println(fmt.Errorf("addProduct: %w", err))
 			http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 	}
 
@@ -88,6 +90,7 @@ func (p *Product) AddProduct(writer http.ResponseWriter, request *http.Request) 
 	if err != nil {
 		log.Println(fmt.Errorf("ListAllProducts: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
@@ -95,6 +98,7 @@ func (p *Product) AddProduct(writer http.ResponseWriter, request *http.Request) 
 	if err != nil {
 		log.Println(fmt.Errorf("addCategory: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -129,6 +133,7 @@ func (p *Product) EditProduct(writer http.ResponseWriter, request *http.Request)
 	if err != nil {
 		log.Println(fmt.Errorf("editProduct: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	var editedPrice *model.Price
@@ -144,6 +149,7 @@ func (p *Product) EditProduct(writer http.ResponseWriter, request *http.Request)
 		if err != nil {
 			log.Println(fmt.Errorf("editProduct: %w", err))
 			http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 	}
 
@@ -157,6 +163,7 @@ func (p *Product) EditProduct(writer http.ResponseWriter, request *http.Request)
 	if err != nil {
 		log.Println(fmt.Errorf("ListAllProducts: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
@@ -164,6 +171,7 @@ func (p *Product) EditProduct(writer http.ResponseWriter, request *http.Request)
 	if err != nil {
 		log.Println(fmt.Errorf("editProduct: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -172,18 +180,21 @@ func (p *Product) ListAllProducts(writer http.ResponseWriter, request *http.Requ
 	if err != nil {
 		log.Println(fmt.Errorf("ListAllProducts: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	prices, err := p.priceRepo.ListAllPrices(request.Context())
 	if err != nil {
 		log.Println(fmt.Errorf("ListAllPrices: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	productsList, err := views.ProductsListWithPrices(products, prices)
 	if err != nil {
 		log.Println(fmt.Errorf("ListAllProducts: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
@@ -191,6 +202,7 @@ func (p *Product) ListAllProducts(writer http.ResponseWriter, request *http.Requ
 	if err != nil {
 		log.Println(fmt.Errorf("ListAllProducts: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 }
 func (p *Product) SearchProductsByCategory(writer http.ResponseWriter, request *http.Request) {
@@ -200,6 +212,7 @@ func (p *Product) SearchProductsByCategory(writer http.ResponseWriter, request *
 		if err != nil {
 			log.Println(fmt.Errorf("SearchProductsByCategory: %w", err))
 			http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		return
 	}
@@ -208,12 +221,14 @@ func (p *Product) SearchProductsByCategory(writer http.ResponseWriter, request *
 	if err != nil {
 		log.Println(fmt.Errorf("SearchProductsByCategory: %w", err))
 		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
 	}
 
 	products, err := p.productRepo.SearchProductsByCategory(request.Context(), category)
 	if err != nil {
 		log.Println(fmt.Errorf("SearchProductsByCategory: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	if len(products) == 0 {
@@ -224,6 +239,7 @@ func (p *Product) SearchProductsByCategory(writer http.ResponseWriter, request *
 	if err != nil {
 		log.Println(fmt.Errorf("SearchProductsByCategory: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
@@ -231,12 +247,14 @@ func (p *Product) SearchProductsByCategory(writer http.ResponseWriter, request *
 	if err != nil {
 		log.Println(fmt.Errorf("SearchProductsByCategory: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	_, err = writer.Write(body)
 	if err != nil {
 		log.Println(fmt.Errorf("SearchProductsByCategory: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	err = p.stock.ToCache(request.Context(), request.RequestURI, body)
@@ -251,6 +269,7 @@ func (p *Product) SearchProductByName(writer http.ResponseWriter, request *http.
 		if err != nil {
 			log.Println(fmt.Errorf("SearchProductByName: %w", err))
 			http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		return
 	}
@@ -269,6 +288,7 @@ func (p *Product) SearchProductByName(writer http.ResponseWriter, request *http.
 	if err != nil {
 		log.Println(fmt.Errorf("SearchProductByName: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	var productList = make([]*model.Product, 0)
@@ -281,6 +301,7 @@ func (p *Product) SearchProductByName(writer http.ResponseWriter, request *http.
 	if err != nil {
 		log.Println(fmt.Errorf("ListAllProducts: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
@@ -288,11 +309,13 @@ func (p *Product) SearchProductByName(writer http.ResponseWriter, request *http.
 	if err != nil {
 		log.Println(fmt.Errorf("SearchPriceByProductID: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 	_, err = writer.Write(body)
 	if err != nil {
 		log.Println(fmt.Errorf("SearchPriceByProductID: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	err = p.stock.ToCache(request.Context(), request.RequestURI, body)
@@ -305,11 +328,13 @@ func (p *Product) SearchActiveProductsOfShop(writer http.ResponseWriter, request
 	if err != nil {
 		log.Println(fmt.Errorf("SearchActiveProductsOfShop: %w", err))
 		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
 	}
 	products, err := p.productRepo.SearchProductsByShop(request.Context(), shopID)
 	if err != nil {
 		log.Println(fmt.Errorf("SearchActiveProductsOfShop: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	if len(products) == 0 {
@@ -323,6 +348,7 @@ func (p *Product) SearchActiveProductsOfShop(writer http.ResponseWriter, request
 			if сerr != nil {
 				log.Println(fmt.Errorf("SearchActiveProductsOfShop: %w", err))
 				http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
 			}
 			prices = append(prices, price)
 		}
@@ -332,6 +358,7 @@ func (p *Product) SearchActiveProductsOfShop(writer http.ResponseWriter, request
 	if err != nil {
 		log.Println(fmt.Errorf("SearchActiveProductsOfShop: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
@@ -339,5 +366,6 @@ func (p *Product) SearchActiveProductsOfShop(writer http.ResponseWriter, request
 	if err != nil {
 		log.Println(fmt.Errorf("SearchActiveProductsOfShop: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 }

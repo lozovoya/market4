@@ -62,7 +62,7 @@ func (a *Auth) Token(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	var reply Token
-	reply.Token, err = a.authService.GetToken(request.Context(), id, roles)
+	reply.Token, err = a.authService.GetToken(id, roles)
 	if err != nil {
 		log.Println(fmt.Errorf("Token: %w", err))
 		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -73,5 +73,6 @@ func (a *Auth) Token(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		log.Println(fmt.Errorf("Token: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 }

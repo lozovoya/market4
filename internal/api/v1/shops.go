@@ -45,6 +45,7 @@ func (s *Shop) EditShop(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		log.Println(fmt.Errorf("editShop: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 }
 func (s *Shop) ListAllShops(writer http.ResponseWriter, request *http.Request) {
@@ -82,6 +83,7 @@ func (s *Shop) AddShop(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		log.Println(fmt.Errorf("addShop: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	var reply struct {
@@ -94,5 +96,6 @@ func (s *Shop) AddShop(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		log.Println(fmt.Errorf("addShop: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 }

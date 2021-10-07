@@ -47,6 +47,7 @@ func (price *Price) AddPrice(writer http.ResponseWriter, request *http.Request) 
 	if err != nil {
 		log.Println(fmt.Errorf("AddPrice: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
@@ -54,6 +55,7 @@ func (price *Price) AddPrice(writer http.ResponseWriter, request *http.Request) 
 	if err != nil {
 		log.Println(fmt.Errorf("editProduct: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -96,6 +98,7 @@ func (price *Price) EditPrice(writer http.ResponseWriter, request *http.Request)
 	if err != nil {
 		log.Println(fmt.Errorf("EditPrice: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
@@ -103,6 +106,7 @@ func (price *Price) EditPrice(writer http.ResponseWriter, request *http.Request)
 	if err != nil {
 		log.Println(fmt.Errorf("editPrice: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -111,12 +115,14 @@ func (price *Price) ListAllPrices(writer http.ResponseWriter, request *http.Requ
 	if err != nil {
 		log.Println(fmt.Errorf("ListAllPrices: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	priceList, err := views.PricesList(prices)
 	if err != nil {
 		log.Println(fmt.Errorf("ListAllPrices: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
@@ -124,5 +130,6 @@ func (price *Price) ListAllPrices(writer http.ResponseWriter, request *http.Requ
 	if err != nil {
 		log.Println(fmt.Errorf("ListAllPrices: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 }

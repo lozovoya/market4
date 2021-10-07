@@ -23,12 +23,14 @@ func (c *Category) ListAllCategories(writer http.ResponseWriter, request *http.R
 	if err != nil {
 		log.Println(fmt.Errorf("ListAllCategories: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	categoriesList, err := views.CategoriesList(categories)
 	if err != nil {
 		log.Println(fmt.Errorf("ListAllCategories: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
@@ -36,6 +38,7 @@ func (c *Category) ListAllCategories(writer http.ResponseWriter, request *http.R
 	if err != nil {
 		log.Println(fmt.Errorf("ListAllCategories: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -58,6 +61,7 @@ func (c *Category) AddCategory(writer http.ResponseWriter, request *http.Request
 	if err != nil {
 		log.Println(fmt.Errorf("addCategory: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	var reply struct {
@@ -70,6 +74,7 @@ func (c *Category) AddCategory(writer http.ResponseWriter, request *http.Request
 	if err != nil {
 		log.Println(fmt.Errorf("addCategory: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 }
 func (c *Category) EditCategory(writer http.ResponseWriter, request *http.Request) {
@@ -96,5 +101,6 @@ func (c *Category) EditCategory(writer http.ResponseWriter, request *http.Reques
 	if err != nil {
 		log.Println(fmt.Errorf("editCategory: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 }
