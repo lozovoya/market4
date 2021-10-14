@@ -2,115 +2,48 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stretchr/testify/suite"
 	"log"
 	"market4/internal/model"
-	"reflect"
+	"sync"
 	"testing"
 )
+
+type args struct {
+	ctx  context.Context
+	user *model.User
+}
+
+type fields struct {
+	pool *pgxpool.Pool
+}
+
+type test []struct {
+	name    string
+	fields  fields
+	args    args
+	want    *model.User
+	wantErr bool
+}
+
+type MarketTestSuite struct {
+	suite.Suite
+	tests test
+}
 
 const (
 	testDSN = "postgres://app:pass@localhost:5432/testdb"
 )
 
-func Test_usersRepo_GetUserID(t *testing.T) {
+func (suite *MarketTestSuite) SetupTest() {
+	fmt.Println("start setup")
 	testPool, err := pgxpool.Connect(context.Background(), testDSN)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	defer testPool.Close()
-	createTableReq := "CREATE " +
-		"TABLE users ( " +
-		"id BIGSERIAL PRIMARY KEY, " +
-		"login TEXT NOT NULL UNIQUE, " +
-		"password TEXT NOT NULL);"
-	_, err = testPool.Query(context.Background(), createTableReq)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	addTestUserReq := "INSERT " +
-		"INTO users (login, password) " +
-		"VALUES ('user1','$2a$10$5h6GDvR0EBtCECFgptg6iuiOu0jkc/qJ8if9jt39NY9ir602nOcXu');"
-	_, err = testPool.Query(context.Background(), addTestUserReq)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	type fields struct {
-		pool *pgxpool.Pool
-	}
-	type args struct {
-		ctx   context.Context
-		login string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    int
-		wantErr bool
-	}{
-		{
-			name: "user exists",
-			fields: fields{
-				pool: testPool,
-			},
-			args: args{
-				ctx:   context.Background(),
-				login: "user1",
-			},
-			want:    1,
-			wantErr: false,
-		},
-		{
-			name: "no user",
-			fields: fields{
-				pool: testPool,
-			},
-			args: args{
-				ctx:   context.Background(),
-				login: "user2",
-			},
-			want:    0,
-			wantErr: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			u := &usersRepo{
-				pool: tt.fields.pool,
-			}
-			got, err := u.GetUserID(tt.args.ctx, tt.args.login)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetUserID() error = %v, wantErr %v", err, tt.wantErr)
-				_, err = testPool.Query(context.Background(), "DROP TABLE users")
-				return
-			}
-			if got != tt.want {
-				t.Errorf("GetUserID() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-	_, err = testPool.Query(context.Background(), "DROP TABLE users")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-}
-
-func Test_usersRepo_AddUser(t *testing.T) {
-
-	testPool, err := pgxpool.Connect(context.Background(), testDSN)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	defer testPool.Close()
 	createTableUsersReq := "CREATE " +
 		"TABLE users ( " +
 		"id BIGSERIAL PRIMARY KEY, " +
@@ -150,14 +83,28 @@ func Test_usersRepo_AddUser(t *testing.T) {
 		log.Println(err)
 		return
 	}
+}
 
-	type fields struct {
-		pool *pgxpool.Pool
+func (suite *MarketTestSuite) TearDownTest() {
+	fmt.Println("cleaning up")
+	testPool, err := pgxpool.Connect(context.Background(), testDSN)
+	if err != nil {
+		suite.Error(err)
+		return
 	}
-	type args struct {
-		ctx  context.Context
-		user *model.User
+	_, err = testPool.Query(context.Background(), "DROP TABLE userroles, roles, users CASCADE;")
+	if err != nil {
+		suite.Error(err)
 	}
+}
+
+func (suite *MarketTestSuite) Test_AddUser() {
+	testPool, err := pgxpool.Connect(context.Background(), testDSN)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
 	tests := []struct {
 		name    string
 		fields  fields
@@ -217,73 +164,44 @@ func Test_usersRepo_AddUser(t *testing.T) {
 			wantErr: true,
 		},
 	}
+	wg := sync.WaitGroup{}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		wg.Add(1)
+		suite.Run(tt.name, func() {
 			u := &usersRepo{
 				pool: tt.fields.pool,
 			}
 			got, err := u.AddUser(tt.args.ctx, tt.args.user)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("AddUser() error = %v, wantErr %v", err, tt.wantErr)
-				_, _ = testPool.Query(context.Background(), "DROP TABLE userroles")
-				_, _ = testPool.Query(context.Background(), "DROP TABLE users")
-				_, _ = testPool.Query(context.Background(), "DROP TABLE roles")
+			fmt.Printf("GOT: %v", got)
+			if (err != nil) && (tt.wantErr == true) {
+				fmt.Printf("AddUser() error = %v, wantErr %v", err, tt.wantErr)
+				wg.Done()
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("AddUser() got = %v, want %v", got, tt.want)
-			}
+			suite.Equal(tt.want, got)
+			wg.Done()
 		})
 	}
-	_, err = testPool.Query(context.Background(), "DROP TABLE userroles")
-	if err != nil {
-		log.Println(err)
-	}
-	_, err = testPool.Query(context.Background(), "DROP TABLE users")
-	if err != nil {
-		log.Println(err)
-
-	}
-	_, err = testPool.Query(context.Background(), "DROP TABLE roles")
-	if err != nil {
-		log.Println(err)
-	}
+	wg.Wait()
 }
 
-func Test_usersRepo_EditUser(t *testing.T) {
+func (suite *MarketTestSuite) Test_EditUser() {
 
 	testPool, err := pgxpool.Connect(context.Background(), testDSN)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	defer testPool.Close()
-	createTableReq := "CREATE " +
-		"TABLE users ( " +
-		"id BIGSERIAL PRIMARY KEY, " +
-		"login TEXT NOT NULL UNIQUE, " +
-		"password TEXT NOT NULL);"
-	_, err = testPool.Query(context.Background(), createTableReq)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+
 	addTestUserReq := "INSERT " +
 		"INTO users (login, password) " +
 		"VALUES ('user1','$2a$10$5h6GDvR0EBtCECFgptg6iuiOu0jkc/qJ8if9jt39NY9ir602nOcXu');"
 	_, err = testPool.Query(context.Background(), addTestUserReq)
 	if err != nil {
-		log.Println(err)
+		suite.Error(err)
 		return
 	}
 
-	type fields struct {
-		pool *pgxpool.Pool
-	}
-	type args struct {
-		ctx  context.Context
-		user *model.User
-	}
 	tests := []struct {
 		name    string
 		fields  fields
@@ -324,102 +242,57 @@ func Test_usersRepo_EditUser(t *testing.T) {
 			wantErr: false,
 		},
 	}
+	wg := sync.WaitGroup{}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		wg.Add(1)
+		suite.Run(tt.name, func() {
 			u := &usersRepo{
 				pool: tt.fields.pool,
 			}
 			got, err := u.EditUser(tt.args.ctx, tt.args.user)
-			t.Logf("GOT %v: ", got)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("EditUser() error = %v, wantErr %v", err, tt.wantErr)
-				_, err = testPool.Query(context.Background(), "DROP TABLE users")
+			fmt.Printf("GOT %v: ", got)
+			if (err != nil) && (tt.wantErr == true) {
+				fmt.Printf("EditUser() error = %v, wantErr %v", err, tt.wantErr)
+				if err != nil {
+					suite.Error(err)
+				}
+				wg.Done()
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("EditUser() got = %v, want %v", got, tt.want)
+			if suite.Equal(tt.want, got) {
+				fmt.Printf("EditUser() got = %v, want %v", got, tt.want)
 			}
+			wg.Done()
 		})
 	}
-	_, err = testPool.Query(context.Background(), "DROP TABLE users")
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	wg.Wait()
 }
 
-func Test_usersRepo_GetUserRolesByID(t *testing.T) {
+func (suite *MarketTestSuite) Test_GetUserRolesByID() {
 
 	testPool, err := pgxpool.Connect(context.Background(), testDSN)
 	if err != nil {
-		t.Log(err)
+		suite.Error(err)
 		return
 	}
-	defer testPool.Close()
-	createTableUsersReq := "CREATE " +
-		"TABLE users ( " +
-		"id BIGSERIAL PRIMARY KEY, " +
-		"login TEXT NOT NULL UNIQUE, " +
-		"password TEXT NOT NULL);"
-	_, err = testPool.Query(context.Background(), createTableUsersReq)
-	if err != nil {
-		t.Log(err)
-		return
-	}
-	createTableRolesReq := "CREATE " +
-		"TABLE roles ( " +
-		"id BIGSERIAL PRIMARY KEY, " +
-		"name TEXT NOT NULL UNIQUE);"
-	_, err = testPool.Query(context.Background(), createTableRolesReq)
-	if err != nil {
-		t.Log(err)
-		return
-	}
-	createTableUserRolesReq := "CREATE " +
-		"TABLE userroles ( " +
-		"user_id BIGINT NOT NULL REFERENCES users, " +
-		"role_id BIGINT NOT NULL REFERENCES roles, " +
-		"PRIMARY KEY (user_id, role_id));"
 
-	_, err = testPool.Query(context.Background(), createTableUserRolesReq)
-	if err != nil {
-		t.Log(err)
-		return
-	}
-	addRolesReq := "INSERT " +
-		"INTO roles (name) " +
-		"VALUES ('USER'), ('ADMIN');"
-
-	_, err = testPool.Query(context.Background(), addRolesReq)
-	if err != nil {
-		t.Log(err)
-		return
-	}
 	addTestUserReq := "INSERT " +
 		"INTO users (login, password) " +
 		"VALUES ('user1','$2a$10$5h6GDvR0EBtCECFgptg6iuiOu0jkc/qJ8if9jt39NY9ir602nOcXu');"
 	_, err = testPool.Query(context.Background(), addTestUserReq)
 	if err != nil {
-		t.Log(err)
+		suite.Error(err)
 		return
 	}
-
 	addUserRoleReq := "INSERT " +
 		"INTO userroles (user_id, role_id) " +
 		"VALUES (1, 2);"
 	_, err = testPool.Query(context.Background(), addUserRoleReq)
 	if err != nil {
-		t.Log(err)
+		suite.Error(err)
 		return
 	}
 
-	type fields struct {
-		pool *pgxpool.Pool
-	}
-	type args struct {
-		ctx context.Context
-		id  int
-	}
 	tests := []struct {
 		name    string
 		fields  fields
@@ -434,32 +307,384 @@ func Test_usersRepo_GetUserRolesByID(t *testing.T) {
 			},
 			args: args{
 				ctx: context.Background(),
-				id:  1,
+				user: &model.User{
+					ID: 1,
+				},
 			},
 			want:    []string{"ADMIN"},
 			wantErr: false,
 		},
 	}
-
+	wg := sync.WaitGroup{}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		wg.Add(1)
+		suite.Run(tt.name, func() {
 			u := &usersRepo{
 				pool: tt.fields.pool,
 			}
-			got, err := u.GetUserRolesByID(tt.args.ctx, tt.args.id)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetUserRolesByID() error = %v, wantErr %v", err, tt.wantErr)
-				_, _ = testPool.Query(context.Background(), "DROP TABLE userroles")
-				_, _ = testPool.Query(context.Background(), "DROP TABLE users")
-				_, _ = testPool.Query(context.Background(), "DROP TABLE roles")
+			got, err := u.GetUserRolesByID(tt.args.ctx, tt.args.user.ID)
+			fmt.Printf("Got: %v", got)
+			if (err != nil) && (tt.wantErr == true) {
+				fmt.Printf("GetUserRolesByID() error = %v, wantErr %v", err, tt.wantErr)
+				wg.Done()
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetUserRolesByID() got = %v, want %v", got, tt.want)
+			if suite.Equal(tt.want, got) {
+				fmt.Printf("GetUserRolesByID() got = %v, want %v", got, tt.want)
+			}
+			wg.Done()
+		})
+	}
+	wg.Wait()
+}
+
+func Test_MarketSuite(t *testing.T) {
+	suite.Run(t, new(MarketTestSuite))
+}
+
+func (suite *MarketTestSuite) Test_AddRole() {
+
+	testPool, err := pgxpool.Connect(context.Background(), testDSN)
+	if err != nil {
+		suite.Error(err)
+		return
+	}
+
+	addTestUserReq := "INSERT " +
+		"INTO users (login, password) " +
+		"VALUES ('user1','$2a$10$5h6GDvR0EBtCECFgptg6iuiOu0jkc/qJ8if9jt39NY9ir602nOcXu');"
+	_, err = testPool.Query(context.Background(), addTestUserReq)
+	if err != nil {
+		suite.Error(err)
+		return
+	}
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "add existing role",
+			fields: fields{
+				pool: testPool,
+			},
+			args: args{
+				ctx: context.Background(),
+				user: &model.User{
+					Login: "user1",
+					Role:  "USER",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "add wrong role",
+			fields: fields{
+				pool: testPool,
+			},
+			args: args{
+				ctx: context.Background(),
+				user: &model.User{
+					ID:    1,
+					Login: "user1",
+					Role:  "EDITOR",
+				},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		suite.Run(tt.name, func() {
+			u := &usersRepo{
+				pool: tt.fields.pool,
+			}
+			err := u.AddRole(tt.args.ctx, tt.args.user.Login, tt.args.user.Role)
+			if err != nil {
+				if tt.wantErr == true {
+					fmt.Printf("AddRole() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				suite.Fail("test failed")
 			}
 		})
 	}
-	_, _ = testPool.Query(context.Background(), "DROP TABLE userroles")
-	_, _ = testPool.Query(context.Background(), "DROP TABLE users")
-	_, _ = testPool.Query(context.Background(), "DROP TABLE roles")
+}
+
+func (suite *MarketTestSuite) Test_RemoveRole() {
+
+	testPool, err := pgxpool.Connect(context.Background(), testDSN)
+	if err != nil {
+		suite.Error(err)
+		return
+	}
+
+	addTestUserReq := "INSERT " +
+		"INTO users (login, password) " +
+		"VALUES ('user1','$2a$10$5h6GDvR0EBtCECFgptg6iuiOu0jkc/qJ8if9jt39NY9ir602nOcXu');"
+	_, err = testPool.Query(context.Background(), addTestUserReq)
+	if err != nil {
+		suite.Error(err)
+		return
+	}
+	addUserRoleReq := "INSERT " +
+		"INTO userroles (user_id, role_id) " +
+		"VALUES (1, 2);"
+	_, err = testPool.Query(context.Background(), addUserRoleReq)
+	if err != nil {
+		suite.Error(err)
+		return
+	}
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "remove wrong role",
+			fields: fields{
+				pool: testPool,
+			},
+			args: args{
+				ctx: context.Background(),
+				user: &model.User{
+					Login: "user1",
+					Role:  "EDITOR",
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "remove ADMIN role",
+			fields: fields{
+				pool: testPool,
+			},
+			args: args{
+				ctx: context.Background(),
+				user: &model.User{
+					Login: "user1",
+					Role:  "ADMIN",
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		suite.Run(tt.name, func() {
+			u := &usersRepo{
+				pool: tt.fields.pool,
+			}
+			err := u.RemoveRole(tt.args.ctx, tt.args.user.Login, tt.args.user.Role)
+			fmt.Printf("REMOVE ROLE %s, reply %v", tt.args.user.Role, err)
+			if err != nil {
+				if tt.wantErr == true {
+					fmt.Printf("RemoveRole() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				suite.Fail("test failed")
+			}
+		})
+	}
+}
+
+func (suite *MarketTestSuite) Test_CheckCreds() {
+
+	testPool, err := pgxpool.Connect(context.Background(), testDSN)
+	if err != nil {
+		suite.Error(err)
+		return
+	}
+
+	addTestUserReq := "INSERT " +
+		"INTO users (login, password) " +
+		"VALUES ('user1','$2a$10$5h6GDvR0EBtCECFgptg6iuiOu0jkc/qJ8if9jt39NY9ir602nOcXu');"
+	_, err = testPool.Query(context.Background(), addTestUserReq)
+	if err != nil {
+		suite.Error(err)
+		return
+	}
+
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   bool
+	}{
+		{
+			name: "right password",
+			fields: fields{
+				pool: testPool,
+			},
+			args: args{
+				ctx: context.Background(),
+				user: &model.User{
+					Login:    "user1",
+					Password: "user1password",
+				},
+			},
+			want: true,
+		},
+		{
+			name: "wrong password",
+			fields: fields{
+				pool: testPool,
+			},
+			args: args{
+				ctx: context.Background(),
+				user: &model.User{
+					Login:    "user1",
+					Password: "qqq",
+				},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		suite.Run(tt.name, func() {
+			u := &usersRepo{
+				pool: tt.fields.pool,
+			}
+			got := u.CheckCreds(tt.args.ctx, tt.args.user)
+			fmt.Printf("GOT %v", got)
+			if got != tt.want {
+				fmt.Printf("CheckCreds() = %v, want %v", got, tt.want)
+				suite.Fail("test failed")
+			}
+		})
+	}
+}
+
+func (suite *MarketTestSuite) Test_GetUserID() {
+
+	testPool, err := pgxpool.Connect(context.Background(), testDSN)
+	if err != nil {
+		suite.Error(err)
+		return
+	}
+
+	addTestUserReq := "INSERT " +
+		"INTO users (login, password) " +
+		"VALUES ('user1','$2a$10$5h6GDvR0EBtCECFgptg6iuiOu0jkc/qJ8if9jt39NY9ir602nOcXu');"
+	_, err = testPool.Query(context.Background(), addTestUserReq)
+	if err != nil {
+		suite.Error(err)
+		return
+	}
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    int
+		wantErr bool
+	}{
+		{
+			name: "check existing user",
+			fields: fields{
+				pool: testPool,
+			},
+			args: args{
+				ctx: context.Background(),
+				user: &model.User{
+					Login: "user1",
+				},
+			},
+			want:    1,
+			wantErr: false,
+		},
+		{
+			name: "check non-existing user",
+			fields: fields{
+				pool: testPool,
+			},
+			args: args{
+				ctx: context.Background(),
+				user: &model.User{
+					Login: "user2",
+				},
+			},
+			want:    0,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		suite.Run(tt.name, func() {
+			u := &usersRepo{
+				pool: tt.fields.pool,
+			}
+			got, err := u.GetUserID(tt.args.ctx, tt.args.user.Login)
+			if (err != nil) != tt.wantErr {
+				fmt.Printf("GetUserID() error = %v, wantErr %v", err, tt.wantErr)
+				suite.Fail("test failed")
+				return
+			}
+			if got != tt.want {
+				fmt.Printf("GetUserID() got = %v, want %v", got, tt.want)
+				suite.Fail("test failed")
+			}
+		})
+	}
+}
+
+func (suite *MarketTestSuite) Test_GetRoleByID() {
+
+	testPool, err := pgxpool.Connect(context.Background(), testDSN)
+	if err != nil {
+		suite.Error(err)
+		return
+	}
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		roleID  int
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "check existing role",
+			fields: fields{
+				pool: testPool,
+			},
+			args: args{
+				ctx: context.Background(),
+			},
+			roleID:  2,
+			want:    "ADMIN",
+			wantErr: false,
+		},
+		{
+			name: "check non-existing role",
+			fields: fields{
+				pool: testPool,
+			},
+			args: args{
+				ctx: context.Background(),
+			},
+			roleID:  20,
+			want:    "",
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		suite.Run(tt.name, func() {
+			u := usersRepo{
+				pool: tt.fields.pool,
+			}
+			got, err := u.GetRoleByID(tt.args.ctx, tt.roleID)
+			if (err != nil) != tt.wantErr {
+				fmt.Printf("GetRoleByID() error = %v, wantErr %v", err, tt.wantErr)
+				suite.Fail("test failed")
+				return
+			}
+			if got != tt.want {
+				fmt.Printf("GetRoleByID() got = %v, want %v", got, tt.want)
+				suite.Fail("test failed")
+			}
+		})
+	}
 }

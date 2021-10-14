@@ -89,6 +89,7 @@ func (u *usersRepo) GetUserRolesByID(ctx context.Context, id int) ([]string, err
 		}
 		return roles, fmt.Errorf("GetUserRoleByID: %w", err)
 	}
+	defer rows.Close()
 	for rows.Next() {
 		var roleID int
 		var roleName string
