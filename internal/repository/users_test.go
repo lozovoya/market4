@@ -11,33 +11,15 @@ import (
 	"testing"
 )
 
-type args struct {
-	ctx  context.Context
-	user *model.User
-}
-
-type fields struct {
-	pool *pgxpool.Pool
-}
-
-type test []struct {
-	name    string
-	fields  fields
-	args    args
-	want    *model.User
-	wantErr bool
-}
-
-type MarketTestSuite struct {
+type UsersTestSuite struct {
 	suite.Suite
-	tests test
 }
 
 const (
 	testDSN = "postgres://app:pass@localhost:5432/testdb"
 )
 
-func (suite *MarketTestSuite) SetupTest() {
+func (suite *UsersTestSuite) SetupTest() {
 	fmt.Println("start setup")
 	testPool, err := pgxpool.Connect(context.Background(), testDSN)
 	if err != nil {
@@ -85,7 +67,7 @@ func (suite *MarketTestSuite) SetupTest() {
 	}
 }
 
-func (suite *MarketTestSuite) TearDownTest() {
+func (suite *UsersTestSuite) TearDownTest() {
 	fmt.Println("cleaning up")
 	testPool, err := pgxpool.Connect(context.Background(), testDSN)
 	if err != nil {
@@ -98,13 +80,20 @@ func (suite *MarketTestSuite) TearDownTest() {
 	}
 }
 
-func (suite *MarketTestSuite) Test_AddUser() {
+func (suite *UsersTestSuite) Test_AddUser() {
 	testPool, err := pgxpool.Connect(context.Background(), testDSN)
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	type args struct {
+		ctx  context.Context
+		user *model.User
+	}
 
+	type fields struct {
+		pool *pgxpool.Pool
+	}
 	tests := []struct {
 		name    string
 		fields  fields
@@ -185,7 +174,7 @@ func (suite *MarketTestSuite) Test_AddUser() {
 	wg.Wait()
 }
 
-func (suite *MarketTestSuite) Test_EditUser() {
+func (suite *UsersTestSuite) Test_EditUser() {
 
 	testPool, err := pgxpool.Connect(context.Background(), testDSN)
 	if err != nil {
@@ -201,7 +190,14 @@ func (suite *MarketTestSuite) Test_EditUser() {
 		suite.Error(err)
 		return
 	}
+	type args struct {
+		ctx  context.Context
+		user *model.User
+	}
 
+	type fields struct {
+		pool *pgxpool.Pool
+	}
 	tests := []struct {
 		name    string
 		fields  fields
@@ -268,7 +264,7 @@ func (suite *MarketTestSuite) Test_EditUser() {
 	wg.Wait()
 }
 
-func (suite *MarketTestSuite) Test_GetUserRolesByID() {
+func (suite *UsersTestSuite) Test_GetUserRolesByID() {
 
 	testPool, err := pgxpool.Connect(context.Background(), testDSN)
 	if err != nil {
@@ -292,7 +288,14 @@ func (suite *MarketTestSuite) Test_GetUserRolesByID() {
 		suite.Error(err)
 		return
 	}
+	type args struct {
+		ctx  context.Context
+		user *model.User
+	}
 
+	type fields struct {
+		pool *pgxpool.Pool
+	}
 	tests := []struct {
 		name    string
 		fields  fields
@@ -339,10 +342,10 @@ func (suite *MarketTestSuite) Test_GetUserRolesByID() {
 }
 
 func Test_MarketSuite(t *testing.T) {
-	suite.Run(t, new(MarketTestSuite))
+	suite.Run(t, new(UsersTestSuite))
 }
 
-func (suite *MarketTestSuite) Test_AddRole() {
+func (suite *UsersTestSuite) Test_AddRole() {
 
 	testPool, err := pgxpool.Connect(context.Background(), testDSN)
 	if err != nil {
@@ -358,7 +361,14 @@ func (suite *MarketTestSuite) Test_AddRole() {
 		suite.Error(err)
 		return
 	}
+	type args struct {
+		ctx  context.Context
+		user *model.User
+	}
 
+	type fields struct {
+		pool *pgxpool.Pool
+	}
 	tests := []struct {
 		name    string
 		fields  fields
@@ -412,7 +422,7 @@ func (suite *MarketTestSuite) Test_AddRole() {
 	}
 }
 
-func (suite *MarketTestSuite) Test_RemoveRole() {
+func (suite *UsersTestSuite) Test_RemoveRole() {
 
 	testPool, err := pgxpool.Connect(context.Background(), testDSN)
 	if err != nil {
@@ -436,7 +446,14 @@ func (suite *MarketTestSuite) Test_RemoveRole() {
 		suite.Error(err)
 		return
 	}
+	type args struct {
+		ctx  context.Context
+		user *model.User
+	}
 
+	type fields struct {
+		pool *pgxpool.Pool
+	}
 	tests := []struct {
 		name    string
 		fields  fields
@@ -490,7 +507,7 @@ func (suite *MarketTestSuite) Test_RemoveRole() {
 	}
 }
 
-func (suite *MarketTestSuite) Test_CheckCreds() {
+func (suite *UsersTestSuite) Test_CheckCreds() {
 
 	testPool, err := pgxpool.Connect(context.Background(), testDSN)
 	if err != nil {
@@ -506,7 +523,14 @@ func (suite *MarketTestSuite) Test_CheckCreds() {
 		suite.Error(err)
 		return
 	}
+	type args struct {
+		ctx  context.Context
+		user *model.User
+	}
 
+	type fields struct {
+		pool *pgxpool.Pool
+	}
 	tests := []struct {
 		name   string
 		fields fields
@@ -557,7 +581,7 @@ func (suite *MarketTestSuite) Test_CheckCreds() {
 	}
 }
 
-func (suite *MarketTestSuite) Test_GetUserID() {
+func (suite *UsersTestSuite) Test_GetUserID() {
 
 	testPool, err := pgxpool.Connect(context.Background(), testDSN)
 	if err != nil {
@@ -573,7 +597,14 @@ func (suite *MarketTestSuite) Test_GetUserID() {
 		suite.Error(err)
 		return
 	}
+	type args struct {
+		ctx  context.Context
+		user *model.User
+	}
 
+	type fields struct {
+		pool *pgxpool.Pool
+	}
 	tests := []struct {
 		name    string
 		fields  fields
@@ -629,14 +660,21 @@ func (suite *MarketTestSuite) Test_GetUserID() {
 	}
 }
 
-func (suite *MarketTestSuite) Test_GetRoleByID() {
+func (suite *UsersTestSuite) Test_GetRoleByID() {
 
 	testPool, err := pgxpool.Connect(context.Background(), testDSN)
 	if err != nil {
 		suite.Error(err)
 		return
 	}
+	type args struct {
+		ctx  context.Context
+		user *model.User
+	}
 
+	type fields struct {
+		pool *pgxpool.Pool
+	}
 	tests := []struct {
 		name    string
 		fields  fields
