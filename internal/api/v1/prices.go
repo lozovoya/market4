@@ -89,10 +89,10 @@ func (price *Price) EditPrice(writer http.ResponseWriter, request *http.Request)
 		return
 	}
 
-	if editedPrice == nil {
+	if editedPrice.ID == 0 {
 		return
 	}
-	var priceList = make([]*model.Price, 0)
+	var priceList = make([]model.Price, 0)
 	priceList = append(priceList, editedPrice)
 	result, err := views.PricesList(priceList)
 	if err != nil {

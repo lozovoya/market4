@@ -55,14 +55,14 @@ func (p *Product) AddProduct(writer http.ResponseWriter, request *http.Request) 
 		Description: data.Description,
 	}
 
-	addedProduct, err := p.productRepo.AddProduct(request.Context(), &product, data.Shop_ID, data.Category_ID)
+	addedProduct, err := p.productRepo.AddProduct(request.Context(), product, data.Shop_ID, data.Category_ID)
 	if err != nil {
 		log.Println(fmt.Errorf("addProduct: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	var editedPrice *model.Price
+	var editedPrice model.Price
 	if data.Price != nil {
 		var price = model.Price{
 			SalePrice:     data.Price.SalePrice,
@@ -71,7 +71,6 @@ func (p *Product) AddProduct(writer http.ResponseWriter, request *http.Request) 
 			IsActive:      data.Price.IsActive,
 			ProductID:     addedProduct.ID,
 		}
-
 		editedPrice, err = p.priceRepo.AddPrice(request.Context(), &price)
 		if err != nil {
 			log.Println(fmt.Errorf("addProduct: %w", err))
@@ -80,10 +79,10 @@ func (p *Product) AddProduct(writer http.ResponseWriter, request *http.Request) 
 		}
 	}
 
-	var productList = make([]*model.Product, 0)
+	var productList = make([]model.Product, 0)
 	productList = append(productList, addedProduct)
 
-	var priceList = make([]*model.Price, 0)
+	var priceList = make([]model.Price, 0)
 	priceList = append(priceList, editedPrice)
 
 	result, err := views.ProductsListWithPrices(productList, priceList)
@@ -129,14 +128,14 @@ func (p *Product) EditProduct(writer http.ResponseWriter, request *http.Request)
 	shopID = data.Shop_ID
 	categoryID = data.Category_ID
 
-	editedProduct, err := p.productRepo.EditProduct(request.Context(), &product, shopID, categoryID)
+	editedProduct, err := p.productRepo.EditProduct(request.Context(), product, shopID, categoryID)
 	if err != nil {
 		log.Println(fmt.Errorf("editProduct: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	var editedPrice *model.Price
+	var editedPrice model.Price
 	if data.Price != nil {
 		var price = model.Price{
 			SalePrice:     data.Price.SalePrice,
@@ -153,10 +152,10 @@ func (p *Product) EditProduct(writer http.ResponseWriter, request *http.Request)
 		}
 	}
 
-	var productList = make([]*model.Product, 0)
+	var productList = make([]model.Product, 0)
 	productList = append(productList, editedProduct)
 
-	var priceList = make([]*model.Price, 0)
+	var priceList = make([]model.Price, 0)
 	priceList = append(priceList, editedPrice)
 
 	result, err := views.ProductsListWithPrices(productList, priceList)
@@ -291,10 +290,10 @@ func (p *Product) SearchProductByName(writer http.ResponseWriter, request *http.
 		return
 	}
 
-	var productList = make([]*model.Product, 0)
+	var productList = make([]model.Product, 0)
 	productList = append(productList, product)
 
-	var priceList = make([]*model.Price, 0)
+	var priceList = make([]model.Price, 0)
 	priceList = append(priceList, price)
 
 	result, err := views.ProductsListWithPrices(productList, priceList)
@@ -341,7 +340,7 @@ func (p *Product) SearchActiveProductsOfShop(writer http.ResponseWriter, request
 		return
 	}
 
-	var prices = make([]*model.Price, 0)
+	var prices = make([]model.Price, 0)
 	for _, product := range products {
 		if product.IsActive {
 			price, сerr := p.priceRepo.SearchPriceByProductID(request.Context(), product.ID)

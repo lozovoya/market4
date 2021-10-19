@@ -59,17 +59,17 @@ CREATE TABLE productshop
     PRIMARY KEY (shop_id, product_id)
 );
 
-CREATE TABLE presence
-(
-    shop_id BIGINT NOT NULL REFERENCES shops,
-    product_id UUID NOT NULL REFERENCES products,
-    PRIMARY KEY (shop_id, product_id)
-);
+-- CREATE TABLE presence
+-- (
+--     shop_id BIGINT NOT NULL REFERENCES shops,
+--     product_id UUID NOT NULL REFERENCES products,
+--     PRIMARY KEY (shop_id, product_id)
+-- );
 
 CREATE TABLE roles
 (
     id BIGSERIAL PRIMARY KEY,
-    c
+    name TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE users

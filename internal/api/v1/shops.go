@@ -56,7 +56,7 @@ func (s *Shop) ListAllShops(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	shopList, err := views.ShopList(shops)
+	shopList, err := views.ShopList(&shops)
 	if err != nil {
 		log.Println(fmt.Errorf("ListAllShops: %w", err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

@@ -31,8 +31,8 @@ func (c *categoryRepo) IfCategoryExists(ctx context.Context, category int) bool 
 	return false
 }
 
-func (c *categoryRepo) ListAllCategories(ctx context.Context) ([]*model.Category, error) {
-	categories := make([]*model.Category, 0)
+func (c *categoryRepo) ListAllCategories(ctx context.Context) ([]model.Category, error) {
+	categories := make([]model.Category, 0)
 
 	dbReq := "SELECT id, name, uri_name " +
 		"FROM categories"
@@ -52,7 +52,7 @@ func (c *categoryRepo) ListAllCategories(ctx context.Context) ([]*model.Category
 			log.Println(err)
 			return categories, fmt.Errorf("ListAllCategories: %w", err)
 		}
-		categories = append(categories, &category)
+		categories = append(categories, category)
 	}
 
 	return categories, nil

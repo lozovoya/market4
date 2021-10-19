@@ -109,7 +109,7 @@ func (u *usersRepo) GetUserRolesByID(ctx context.Context, id int) ([]string, err
 	return roles, nil
 }
 
-func (u *usersRepo) CheckCreds(ctx context.Context, user *model.User) bool {
+func (u *usersRepo) CheckCreds(ctx context.Context, user model.User) bool {
 	dbReq := "SELECT password FROM users WHERE login = $1"
 	var hash []byte
 	err := u.pool.QueryRow(ctx, dbReq, user.Login).Scan(&hash)

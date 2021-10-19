@@ -30,11 +30,11 @@ func (s *shopRepo) IfShopExists(ctx context.Context, shop int) bool {
 	}
 	return false
 }
-func (s *shopRepo) ListAllShops(ctx context.Context) ([]*model.Shop, error) {
+func (s *shopRepo) ListAllShops(ctx context.Context) ([]model.Shop, error) {
 	dbReq := "SELECT id, name, address, lon, lat, working_hours " +
 		"FROM shops"
 
-	shops := make([]*model.Shop, 0)
+	shops := make([]model.Shop, 0)
 	rows, err := s.pool.Query(ctx, dbReq)
 	if err != nil {
 		if strings.Contains(err.Error(), "no rows in result set") {
@@ -51,7 +51,7 @@ func (s *shopRepo) ListAllShops(ctx context.Context) ([]*model.Shop, error) {
 			log.Println(err)
 			return shops, fmt.Errorf("ListAllShops: %w", err)
 		}
-		shops = append(shops, &shop)
+		shops = append(shops, shop)
 	}
 
 	return shops, nil

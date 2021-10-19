@@ -4,7 +4,7 @@ import (
 	"market4/internal/model"
 )
 
-func CategoriesList(categories []*model.Category) (*CategoriesListDTO, error) {
+func CategoriesList(categories []model.Category) (*CategoriesListDTO, error) {
 	if len(categories) == 0 {
 		return nil, nil
 	}

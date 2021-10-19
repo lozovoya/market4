@@ -37,7 +37,7 @@ func (a *Auth) Token(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	if ok := a.usersRepo.CheckCreds(request.Context(), data); !ok {
+	if ok := a.usersRepo.CheckCreds(request.Context(), *data); !ok {
 		http.Error(writer, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		return
 	}

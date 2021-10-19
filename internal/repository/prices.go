@@ -18,7 +18,7 @@ func NewPriceRepository(pool *pgxpool.Pool) Price {
 	return &priceRepo{pool: pool}
 }
 
-func (price *priceRepo) AddPrice(ctx context.Context, p *model.Price) (*model.Price, error) {
+func (price *priceRepo) AddPrice(ctx context.Context, p *model.Price) (model.Price, error) {
 	dbReq := "INSERT INTO prices (sale_price, factory_price, discount_price, product_id, is_active)" +
 		"VALUES ($1, $2, $3, $4, $5)" +
 		"RETURNING sale_price, factory_price, discount_price"
@@ -33,12 +33,12 @@ func (price *priceRepo) AddPrice(ctx context.Context, p *model.Price) (*model.Pr
 		&newPrice.FactoryPrice,
 		&newPrice.DiscountPrice)
 	if err != nil {
-		return nil, fmt.Errorf("AddPrice: %w", err)
+		return newPrice, fmt.Errorf("AddPrice: %w", err)
 	}
-	return &newPrice, nil
+	return newPrice, nil
 }
 
-func (price *priceRepo) EditPrice(ctx context.Context, p *model.Price) (*model.Price, error) {
+func (price *priceRepo) EditPrice(ctx context.Context, p *model.Price) (model.Price, error) {
 	var dbReq = "UPDATE prices " +
 		"SET sale_price=$1, factory_price=$2, discount_price=$3, is_active=$4, updated=CURRENT_TIMESTAMP " +
 		"WHERE id = $5" +
@@ -59,16 +59,16 @@ func (price *priceRepo) EditPrice(ctx context.Context, p *model.Price) (*model.P
 		&result.ProductID)
 	if err != nil {
 		if strings.Contains(err.Error(), "no rows in result set") {
-			return nil, nil
+			return result, nil
 		}
-		return &result, fmt.Errorf("EditPrice: %w", err)
+		return result, fmt.Errorf("EditPrice: %w", err)
 	}
 
 	log.Printf("Price for %s is updated", p.ProductID)
-	return &result, nil
+	return result, nil
 }
 
-func (price *priceRepo) EditPriceByProductID(ctx context.Context, p *model.Price) (*model.Price, error) {
+func (price *priceRepo) EditPriceByProductID(ctx context.Context, p *model.Price) (model.Price, error) {
 	var dbReq = "UPDATE prices " +
 		"SET sale_price=$1, factory_price=$2, discount_price=$3, is_active=$4, updated=CURRENT_TIMESTAMP " +
 		"WHERE product_id = $5" +
@@ -84,17 +84,17 @@ func (price *priceRepo) EditPriceByProductID(ctx context.Context, p *model.Price
 		p.ProductID).Scan(&result.ID, &result.SalePrice, &result.FactoryPrice, &result.DiscountPrice, &result.IsActive, &result.ProductID)
 	if err != nil {
 		if strings.Contains(err.Error(), "no rows in result set") {
-			return &result, nil
+			return result, nil
 		}
-		return nil, fmt.Errorf("EditPriceByProductID: %w", err)
+		return result, fmt.Errorf("EditPriceByProductID: %w", err)
 	}
 
 	log.Printf("Price for %s is updated", p.ProductID)
-	return &result, nil
+	return result, nil
 }
 
-func (price *priceRepo) ListAllPrices(ctx context.Context) ([]*model.Price, error) {
-	prices := make([]*model.Price, 0)
+func (price *priceRepo) ListAllPrices(ctx context.Context) ([]model.Price, error) {
+	prices := make([]model.Price, 0)
 
 	dbReq := "SELECT id, sale_price, factory_price, discount_price, is_active, product_id " +
 		"FROM prices"
@@ -106,22 +106,22 @@ func (price *priceRepo) ListAllPrices(ctx context.Context) ([]*model.Price, erro
 		return prices, fmt.Errorf("ListAllPrices: %w", err)
 	}
 	for rows.Next() {
-		var price model.Price
-		err = rows.Scan(&price.ID,
-			&price.SalePrice,
-			&price.FactoryPrice,
-			&price.DiscountPrice,
-			&price.IsActive,
-			&price.ProductID)
+		var result model.Price
+		err = rows.Scan(&result.ID,
+			&result.SalePrice,
+			&result.FactoryPrice,
+			&result.DiscountPrice,
+			&result.IsActive,
+			&result.ProductID)
 		if err != nil {
 			return prices, fmt.Errorf("ListAllPrices: %w", err)
 		}
 
-		prices = append(prices, &price)
+		prices = append(prices, result)
 	}
 	return prices, nil
 }
-func (price *priceRepo) SearchPriceByProductID(ctx context.Context, productID string) (*model.Price, error) {
+func (price *priceRepo) SearchPriceByProductID(ctx context.Context, productID string) (model.Price, error) {
 	dbReq := fmt.Sprintf("SELECT id, sale_price, factory_price, discount_price, product_id, is_active "+
 		"FROM prices "+
 		"WHERE product_id = '%s'",
@@ -136,9 +136,9 @@ func (price *priceRepo) SearchPriceByProductID(ctx context.Context, productID st
 		&productPrice.IsActive)
 	if err != nil {
 		if strings.Contains(err.Error(), "no rows in result set") {
-			return &productPrice, nil
+			return productPrice, nil
 		}
-		return &productPrice, fmt.Errorf("SearchPriceByProductID: %w", err)
+		return productPrice, fmt.Errorf("SearchPriceByProductID: %w", err)
 	}
-	return &productPrice, nil
+	return productPrice, nil
 }
