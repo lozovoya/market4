@@ -11,3 +11,10 @@ type Roles struct {
 	ID   int    `json:"id"`
 	Role string `json:"role"`
 }
+
+type UserRole string
+
+const (
+	ADMIN UserRole = "ADMIN"
+	USER  UserRole = "USER"
+)

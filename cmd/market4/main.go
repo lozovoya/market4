@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"go.uber.org/zap"
 	"log"
 	"market4/internal/api/auth"
 	"market4/internal/api/httpserver"
@@ -63,13 +63,16 @@ func main() {
 	}
 }
 func execute(addr, dsn, cacheDSN, privateJWTKey, publicJWTKey string) (err error) {
+	lg := zap.NewExample()
+	defer lg.Sync()
+
 	cachePool := cache2.InitCache(cacheDSN)
 	cache := cache2.NewRedisCache(cachePool)
 
 	shopCtx := context.Background()
 	shopPool, err := pgxpool.Connect(shopCtx, dsn)
 	if err != nil {
-		log.Println(fmt.Errorf("Execute: %w", err))
+		lg.Error("Execute", zap.Error(err))
 		return err
 	}
 	shopRepo := repository.NewShopRepository(shopPool)
@@ -78,16 +81,16 @@ func execute(addr, dsn, cacheDSN, privateJWTKey, publicJWTKey string) (err error
 	categoryCtx := context.Background()
 	categoryPool, err := pgxpool.Connect(categoryCtx, dsn)
 	if err != nil {
-		log.Println(fmt.Errorf("Execute: %w", err))
+		lg.Error("Execute", zap.Error(err))
 		return err
 	}
 	categoryRepo := repository.NewCategoryRepository(categoryPool)
-	categoryController := controllers.NewCategory(categoryRepo)
+	categoryController := controllers.NewCategory(categoryRepo, lg)
 
 	priceCtx := context.Background()
 	pricePool, err := pgxpool.Connect(priceCtx, dsn)
 	if err != nil {
-		log.Println(fmt.Errorf("Execute: %w", err))
+		lg.Error("Execute", zap.Error(err))
 		return err
 	}
 	priceRepo := repository.NewPriceRepository(pricePool)
@@ -96,7 +99,7 @@ func execute(addr, dsn, cacheDSN, privateJWTKey, publicJWTKey string) (err error
 	productCtx := context.Background()
 	productPool, err := pgxpool.Connect(productCtx, dsn)
 	if err != nil {
-		log.Println(fmt.Errorf("Execute: %w", err))
+		lg.Error("Execute", zap.Error(err))
 		return err
 	}
 	productRepo := repository.NewProductRepository(productPool, categoryRepo, shopRepo, priceRepo)
@@ -105,7 +108,7 @@ func execute(addr, dsn, cacheDSN, privateJWTKey, publicJWTKey string) (err error
 	usersCtx := context.Background()
 	usersPool, err := pgxpool.Connect(usersCtx, dsn)
 	if err != nil {
-		log.Println(fmt.Errorf("Execute: %w", err))
+		lg.Error("Execute", zap.Error(err))
 		return err
 	}
 	usersRepo := repository.NewUsersRepo(usersPool)

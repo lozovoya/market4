@@ -6,10 +6,11 @@ import (
 	"io/ioutil"
 	"log"
 	"market4/internal/api/auth"
+	"market4/internal/model"
 	"net/http"
 )
 
-func Auth(role string) func(handler http.Handler) http.Handler {
+func Auth(role model.UserRole) func(handler http.Handler) http.Handler {
 	return func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			publicKeySource, err := ioutil.ReadFile(auth.PUBLICKEY)
@@ -50,7 +51,7 @@ func Auth(role string) func(handler http.Handler) http.Handler {
 			}
 
 			for _, r := range claims.Roles {
-				if r == role {
+				if r == string(role) {
 					handler.ServeHTTP(writer, request)
 					return
 				}
