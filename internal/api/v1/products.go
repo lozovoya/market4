@@ -205,9 +205,15 @@ func (p *Product) ListAllProducts(writer http.ResponseWriter, request *http.Requ
 	}
 }
 func (p *Product) SearchProductsByCategory(writer http.ResponseWriter, request *http.Request) {
-	if productsList, _ := p.stock.FromCache(request.Context(), request.RequestURI); productsList != nil {
+	productsList, err := p.stock.FromCache(request.Context(), request.RequestURI)
+	if err != nil {
+		p.lg.Error("SearchProductsByCategory", zap.Error(err))
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	if productsList != nil {
 		writer.Header().Set("Content-Type", "application/json")
-		_, err := writer.Write(productsList)
+		_, err = writer.Write(productsList)
 		if err != nil {
 			p.lg.Error("SearchProductsByCategory", zap.Error(err))
 			http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -234,7 +240,7 @@ func (p *Product) SearchProductsByCategory(writer http.ResponseWriter, request *
 		return
 	}
 
-	productsList, err := views.ProductsList(products)
+	pList, err := views.ProductsList(products)
 	if err != nil {
 		p.lg.Error("SearchProductsByCategory", zap.Error(err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -242,7 +248,7 @@ func (p *Product) SearchProductsByCategory(writer http.ResponseWriter, request *
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
-	body, err := json.Marshal(productsList)
+	body, err := json.Marshal(pList)
 	if err != nil {
 		p.lg.Error("SearchProductsByCategory", zap.Error(err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
