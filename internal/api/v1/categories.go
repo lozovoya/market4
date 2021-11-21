@@ -11,7 +11,7 @@ import (
 
 type Category struct {
 	categoryRepo repository.Category
-	lg *zap.Logger
+	lg           *zap.Logger
 }
 
 func NewCategory(categoryRepo repository.Category, lg *zap.Logger) *Category {
@@ -23,7 +23,7 @@ func (c *Category) ListAllCategories(writer http.ResponseWriter, request *http.R
 		c.lg.Error("ListAllCategories", zap.Error(err))
 
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		http.
+
 		return
 	}
 

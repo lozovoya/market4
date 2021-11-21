@@ -5,8 +5,8 @@ import (
 	"crypto/rsa"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
+	"go.uber.org/zap"
 	"io/ioutil"
-	"log"
 	"market4/internal/repository"
 	"time"
 )
@@ -19,28 +19,29 @@ type AuthService struct {
 	privateKey *rsa.PrivateKey
 	publicKey  *rsa.PublicKey
 	usersRepo  repository.Users
+	lg         *zap.Logger
 }
 
-func NewAuthService(privateKey, publicKey string, usersRepo repository.Users) *AuthService {
+func NewAuthService(privateKey, publicKey string, usersRepo repository.Users, lg *zap.Logger) *AuthService {
 	publicKeySource, err := ioutil.ReadFile(publicKey)
 	if err != nil {
-		log.Println(fmt.Errorf("Auth: %w", err))
+		lg.Error("Auth", zap.Error(err))
 		return nil
 	}
 	privateKeySource, err := ioutil.ReadFile(privateKey)
 	if err != nil {
-		log.Println(fmt.Errorf("Auth: %w", err))
+		lg.Error("Auth", zap.Error(err))
 		return nil
 	}
 
 	k1, err := jwt.ParseRSAPrivateKeyFromPEM(privateKeySource)
 	if err != nil {
-		log.Println(fmt.Errorf("Auth: %w", err))
+		lg.Error("Auth", zap.Error(err))
 		return nil
 	}
 	k2, err := jwt.ParseRSAPublicKeyFromPEM(publicKeySource)
 	if err != nil {
-		log.Println(fmt.Errorf("Auth: %w", err))
+		lg.Error("Auth", zap.Error(err))
 		return nil
 	}
 
@@ -80,17 +81,14 @@ func (a *AuthService) GetRoleFromToken(token string) ([]string, error) {
 	})
 	var roles = make([]string, 0)
 	if err != nil {
-		log.Println(fmt.Errorf("CheckToken: %w", err))
-		return roles, err
+		return roles, fmt.Errorf("GetRoleFromToken: %w", err)
 	}
 	if !payload.Valid {
-		log.Println(fmt.Errorf("CheckToken: %w", err))
-		return roles, err
+		return roles, fmt.Errorf("GetRoleFromToken: %w", err)
 	}
 	claims, ok := payload.Claims.(*Payload)
 	if !ok {
-		log.Println(fmt.Errorf("CheckToken: %w", err))
-		return roles, err
+		return roles, fmt.Errorf("GetRoleFromToken: %w", err)
 	}
 
 	return claims.Roles, nil

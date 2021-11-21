@@ -3,11 +3,11 @@ package repository
 import (
 	"context"
 	"fmt"
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"market4/internal/model"
-	"strings"
 )
 
 type usersRepo struct {
@@ -50,12 +50,11 @@ func (u *usersRepo) EditUser(ctx context.Context, user *model.User) (*model.User
 	}
 	err = u.pool.QueryRow(ctx, dbReq, hash, user.Login).Scan(&editedUser.ID)
 	if err != nil {
-		if strings.Contains(err.Error(), "no rows in result set") {
+		if err == pgx.ErrNoRows {
 			return &editedUser, nil
 		}
 		return &editedUser, fmt.Errorf("EditUser: %w", err)
 	}
-
 	return &editedUser, nil
 }
 func (u *usersRepo) AddRole(ctx context.Context, login, role string) error {
@@ -84,7 +83,7 @@ func (u *usersRepo) GetUserRolesByID(ctx context.Context, id int) ([]string, err
 	var roles = make([]string, 0)
 	rows, err := u.pool.Query(ctx, dbReq, id)
 	if err != nil {
-		if strings.Contains(err.Error(), "no rows in result set") {
+		if err == pgx.ErrNoRows {
 			return roles, nil
 		}
 		return roles, fmt.Errorf("GetUserRoleByID: %w", err)
@@ -99,7 +98,7 @@ func (u *usersRepo) GetUserRolesByID(ctx context.Context, id int) ([]string, err
 		}
 		roleName, err = u.GetRoleByID(ctx, roleID)
 		if err != nil {
-			if strings.Contains(err.Error(), "no rows in result set") {
+			if err == pgx.ErrNoRows {
 				continue
 			}
 			return roles, fmt.Errorf("GetUserRoleByID: %w", err)
@@ -131,7 +130,7 @@ func (u *usersRepo) GetUserID(ctx context.Context, login string) (int, error) {
 	var id int
 	err := u.pool.QueryRow(ctx, dbReq, login).Scan(&id)
 	if err != nil {
-		if strings.Contains(err.Error(), "no rows in result set") {
+		if err == pgx.ErrNoRows {
 			return 0, nil
 		}
 		return 0, fmt.Errorf("GetUserID: %w", err)
@@ -144,7 +143,7 @@ func (u usersRepo) GetRoleByID(ctx context.Context, roleID int) (string, error) 
 	var role string
 	err := u.pool.QueryRow(ctx, dbReq, roleID).Scan(&role)
 	if err != nil {
-		if strings.Contains(err.Error(), "no rows in result set") {
+		if err == pgx.ErrNoRows {
 			return "", nil
 		}
 		return "", fmt.Errorf("GetRoleByID: %w", err)

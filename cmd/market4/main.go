@@ -76,7 +76,7 @@ func execute(addr, dsn, cacheDSN, privateJWTKey, publicJWTKey string) (err error
 		return err
 	}
 	shopRepo := repository.NewShopRepository(shopPool)
-	shopController := controllers.NewShop(shopRepo)
+	shopController := controllers.NewShop(shopRepo, lg)
 
 	categoryCtx := context.Background()
 	categoryPool, err := pgxpool.Connect(categoryCtx, dsn)
@@ -94,7 +94,7 @@ func execute(addr, dsn, cacheDSN, privateJWTKey, publicJWTKey string) (err error
 		return err
 	}
 	priceRepo := repository.NewPriceRepository(pricePool)
-	priceController := controllers.NewPrice(priceRepo)
+	priceController := controllers.NewPrice(priceRepo, lg)
 
 	productCtx := context.Background()
 	productPool, err := pgxpool.Connect(productCtx, dsn)
@@ -103,7 +103,7 @@ func execute(addr, dsn, cacheDSN, privateJWTKey, publicJWTKey string) (err error
 		return err
 	}
 	productRepo := repository.NewProductRepository(productPool, categoryRepo, shopRepo, priceRepo)
-	productController := controllers.NewProduct(productRepo, priceRepo, cache)
+	productController := controllers.NewProduct(productRepo, priceRepo, cache, lg)
 
 	usersCtx := context.Background()
 	usersPool, err := pgxpool.Connect(usersCtx, dsn)
@@ -112,12 +112,12 @@ func execute(addr, dsn, cacheDSN, privateJWTKey, publicJWTKey string) (err error
 		return err
 	}
 	usersRepo := repository.NewUsersRepo(usersPool)
-	usersController := controllers.NewUser(usersRepo)
+	usersController := controllers.NewUser(usersRepo, lg)
 
-	authService := auth.NewAuthService(privateJWTKey, publicJWTKey, usersRepo)
-	authController := controllers.NewAuth(*authService, usersRepo)
+	authService := auth.NewAuthService(privateJWTKey, publicJWTKey, usersRepo, lg)
+	authController := controllers.NewAuth(*authService, usersRepo, lg)
 
-	router := httpserver.NewRouter(chi.NewRouter(),
+	router := httpserver.NewRouter(chi.NewRouter(), lg,
 		shopController,
 		categoryController,
 		productController,

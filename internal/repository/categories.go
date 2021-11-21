@@ -3,11 +3,10 @@ package repository
 import (
 	"context"
 	"fmt"
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
 	"market4/internal/model"
-	"strings"
-
-	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type categoryRepo struct {
@@ -38,7 +37,7 @@ func (c *categoryRepo) ListAllCategories(ctx context.Context) ([]model.Category,
 		"FROM categories"
 	rows, err := c.pool.Query(ctx, dbReq)
 	if err != nil {
-		if strings.Contains(err.Error(), "no rows in result set") {
+		if err == pgx.ErrNoRows {
 			return categories, nil
 		}
 		return categories, fmt.Errorf("ListAllCategories: %w", err)
@@ -49,12 +48,10 @@ func (c *categoryRepo) ListAllCategories(ctx context.Context) ([]model.Category,
 		var category model.Category
 		err = rows.Scan(&category.ID, &category.Name, &category.URI_name)
 		if err != nil {
-			log.Println(err)
 			return categories, fmt.Errorf("ListAllCategories: %w", err)
 		}
 		categories = append(categories, category)
 	}
-
 	return categories, nil
 }
 func (c *categoryRepo) AddCategory(ctx context.Context, category *model.Category) (int, error) {
@@ -75,8 +72,6 @@ func (c *categoryRepo) AddCategory(ctx context.Context, category *model.Category
 	if err != nil {
 		return 0, fmt.Errorf("AddCategory: %w", err)
 	}
-
-	log.Printf("Category %d is added", id)
 	return id, nil
 }
 func (c *categoryRepo) EditCategory(ctx context.Context, category *model.Category) error {
@@ -87,6 +82,5 @@ func (c *categoryRepo) EditCategory(ctx context.Context, category *model.Categor
 	if err != nil {
 		return fmt.Errorf("UpdateCategoryParameter: %w", err)
 	}
-
 	return nil
 }

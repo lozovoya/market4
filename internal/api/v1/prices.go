@@ -2,8 +2,7 @@ package v1
 
 import (
 	"encoding/json"
-	"fmt"
-	"log"
+	"go.uber.org/zap"
 	"market4/internal/model"
 	"market4/internal/repository"
 	"market4/internal/views"
@@ -21,17 +20,18 @@ type PriceDTO struct {
 
 type Price struct {
 	priceRepo repository.Price
+	lg        *zap.Logger
 }
 
-func NewPrice(priceRepo repository.Price) *Price {
-	return &Price{priceRepo: priceRepo}
+func NewPrice(priceRepo repository.Price, lg *zap.Logger) *Price {
+	return &Price{priceRepo: priceRepo, lg: lg}
 }
 
 func (price *Price) AddPrice(writer http.ResponseWriter, request *http.Request) {
 	var data *PriceDTO
 	err := json.NewDecoder(request.Body).Decode(&data)
 	if err != nil {
-		log.Println(fmt.Errorf("addPrice: %w", err))
+		price.lg.Error("addPrice", zap.Error(err))
 		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
@@ -45,7 +45,7 @@ func (price *Price) AddPrice(writer http.ResponseWriter, request *http.Request) 
 	}
 	addedPrice, err := price.priceRepo.AddPrice(request.Context(), &p)
 	if err != nil {
-		log.Println(fmt.Errorf("AddPrice: %w", err))
+		price.lg.Error("addPrice", zap.Error(err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -53,7 +53,7 @@ func (price *Price) AddPrice(writer http.ResponseWriter, request *http.Request) 
 	writer.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(writer).Encode(addedPrice)
 	if err != nil {
-		log.Println(fmt.Errorf("editProduct: %w", err))
+		price.lg.Error("addPrice", zap.Error(err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -63,13 +63,13 @@ func (price *Price) EditPrice(writer http.ResponseWriter, request *http.Request)
 	var data *PriceDTO
 	err := json.NewDecoder(request.Body).Decode(&data)
 	if err != nil {
-		log.Println(fmt.Errorf("addPrice: %w", err))
+		price.lg.Error("EditPrice", zap.Error(err))
 		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 
 	if data.ID == 0 {
-		log.Println(fmt.Errorf("EditPrice: id is empty"))
+		price.lg.Error("EditPrice: id is empty")
 		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
@@ -84,7 +84,7 @@ func (price *Price) EditPrice(writer http.ResponseWriter, request *http.Request)
 	}
 	editedPrice, err := price.priceRepo.EditPrice(request.Context(), &p)
 	if err != nil {
-		log.Println(fmt.Errorf("EditPrice: %w", err))
+		price.lg.Error("EditPrice", zap.Error(err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -96,7 +96,7 @@ func (price *Price) EditPrice(writer http.ResponseWriter, request *http.Request)
 	priceList = append(priceList, editedPrice)
 	result, err := views.PricesList(priceList)
 	if err != nil {
-		log.Println(fmt.Errorf("EditPrice: %w", err))
+		price.lg.Error("EditPrice", zap.Error(err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -104,7 +104,7 @@ func (price *Price) EditPrice(writer http.ResponseWriter, request *http.Request)
 	writer.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(writer).Encode(result)
 	if err != nil {
-		log.Println(fmt.Errorf("editPrice: %w", err))
+		price.lg.Error("EditPrice", zap.Error(err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -113,14 +113,14 @@ func (price *Price) EditPrice(writer http.ResponseWriter, request *http.Request)
 func (price *Price) ListAllPrices(writer http.ResponseWriter, request *http.Request) {
 	prices, err := price.priceRepo.ListAllPrices(request.Context())
 	if err != nil {
-		log.Println(fmt.Errorf("ListAllPrices: %w", err))
+		price.lg.Error("ListAllPrices", zap.Error(err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
 	priceList, err := views.PricesList(prices)
 	if err != nil {
-		log.Println(fmt.Errorf("ListAllPrices: %w", err))
+		price.lg.Error("ListAllPrices", zap.Error(err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -128,7 +128,7 @@ func (price *Price) ListAllPrices(writer http.ResponseWriter, request *http.Requ
 	writer.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(writer).Encode(priceList)
 	if err != nil {
-		log.Println(fmt.Errorf("ListAllPrices: %w", err))
+		price.lg.Error("ListAllPrices", zap.Error(err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}

@@ -62,7 +62,7 @@ func (a *apiCache) FromCache(ctx context.Context, key string) (value []byte, err
 	}
 	value, err = redis.Bytes(reply, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("FromCache: %w", err)
 	}
 
 	return value, nil

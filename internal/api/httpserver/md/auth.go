@@ -1,33 +1,32 @@
 package md
 
 import (
-	"fmt"
 	"github.com/dgrijalva/jwt-go"
+	"go.uber.org/zap"
 	"io/ioutil"
-	"log"
 	"market4/internal/api/auth"
 	"market4/internal/model"
 	"net/http"
 )
 
-func Auth(role model.UserRole) func(handler http.Handler) http.Handler {
+func Auth(role model.UserRole, lg *zap.Logger) func(handler http.Handler) http.Handler {
 	return func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			publicKeySource, err := ioutil.ReadFile(auth.PUBLICKEY)
 			if err != nil {
-				log.Println(fmt.Errorf("Auth: %w", err))
+				lg.Error("Auth", zap.Error(err))
 				http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
 			publicKey, err := jwt.ParseRSAPublicKeyFromPEM(publicKeySource)
 			if err != nil {
-				log.Println(fmt.Errorf("Auth: %w", err))
+				lg.Error("Auth", zap.Error(err))
 				http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
 			token := request.Header.Get("Authorization")
 			if token == "" {
-				log.Printf("Auth: empty token")
+				lg.Error("Auth: empty token")
 				http.Error(writer, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
 			}
@@ -35,12 +34,12 @@ func Auth(role model.UserRole) func(handler http.Handler) http.Handler {
 				return publicKey, nil
 			})
 			if err != nil {
-				log.Println(fmt.Errorf("Auth: %w", err))
+				lg.Error("Auth", zap.Error(err))
 				http.Error(writer, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
 			}
 			if !payload.Valid {
-				log.Println(fmt.Errorf("Auth: %w", err))
+				lg.Error("Auth", zap.Error(err))
 				http.Error(writer, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
 			}

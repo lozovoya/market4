@@ -2,8 +2,7 @@ package v1
 
 import (
 	"encoding/json"
-	"fmt"
-	"log"
+	"go.uber.org/zap"
 	"market4/internal/api/auth"
 	"market4/internal/model"
 	"market4/internal/repository"
@@ -17,22 +16,23 @@ type Token struct {
 type Auth struct {
 	authService auth.AuthService
 	usersRepo   repository.Users
+	lg          *zap.Logger
 }
 
-func NewAuth(authService auth.AuthService, usersRepo repository.Users) *Auth {
-	return &Auth{authService: authService, usersRepo: usersRepo}
+func NewAuth(authService auth.AuthService, usersRepo repository.Users, lg *zap.Logger) *Auth {
+	return &Auth{authService: authService, usersRepo: usersRepo, lg: lg}
 }
 
 func (a *Auth) Token(writer http.ResponseWriter, request *http.Request) {
 	var data *model.User
 	err := json.NewDecoder(request.Body).Decode(&data)
 	if err != nil {
-		log.Println(fmt.Errorf("Token: %w", err))
+		a.lg.Error("Token", zap.Error(err))
 		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 	if IsEmpty(data.Login) || IsEmpty(data.Password) {
-		log.Println("field is empty")
+		a.lg.Error("Token: field is empty")
 		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
@@ -44,14 +44,14 @@ func (a *Auth) Token(writer http.ResponseWriter, request *http.Request) {
 
 	id, err := a.usersRepo.GetUserID(request.Context(), data.Login)
 	if err != nil {
-		log.Println(fmt.Errorf("Token: %w", err))
+		a.lg.Error("Token", zap.Error(err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
 	roles, err := a.usersRepo.GetUserRolesByID(request.Context(), id)
 	if err != nil {
-		log.Println(fmt.Errorf("Token: %w", err))
+		a.lg.Error("Token", zap.Error(err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -64,14 +64,14 @@ func (a *Auth) Token(writer http.ResponseWriter, request *http.Request) {
 	var reply Token
 	reply.Token, err = a.authService.GetToken(id, roles)
 	if err != nil {
-		log.Println(fmt.Errorf("Token: %w", err))
+		a.lg.Error("Token", zap.Error(err))
 		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 	writer.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(writer).Encode(reply)
 	if err != nil {
-		log.Println(fmt.Errorf("Token: %w", err))
+		a.lg.Error("Token", zap.Error(err))
 		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}

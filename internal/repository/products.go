@@ -4,11 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
 	"market4/internal/model"
-	"strings"
-
-	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type productRepo struct {
@@ -137,8 +136,6 @@ func (p *productRepo) EditProduct(ctx context.Context, product model.Product, sh
 			return result, fmt.Errorf("EditProduct: %w", err)
 		}
 	}
-
-	log.Printf("Product %s updated", result.ID)
 	return result, nil
 }
 
@@ -149,7 +146,7 @@ func (p *productRepo) ListAllProducts(ctx context.Context) ([]model.Product, err
 		"FROM products "
 	rows, err := p.pool.Query(ctx, dbReq)
 	if err != nil {
-		if strings.Contains(err.Error(), "no rows in result set") {
+		if err == pgx.ErrNoRows {
 			return products, nil
 		}
 		return products, fmt.Errorf("ListAllProducts: %w", err)
@@ -162,7 +159,6 @@ func (p *productRepo) ListAllProducts(ctx context.Context) ([]model.Product, err
 		}
 		products = append(products, product)
 	}
-
 	return products, nil
 }
 func (p *productRepo) SearchProductsByCategory(ctx context.Context, category int) ([]model.Product, error) {
@@ -175,7 +171,7 @@ func (p *productRepo) SearchProductsByCategory(ctx context.Context, category int
 		"WHERE productcategory.category_id = $1 "
 	rows, err := p.pool.Query(ctx, dbReq, category)
 	if err != nil {
-		if strings.Contains(err.Error(), "no rows in result set") {
+		if err == pgx.ErrNoRows {
 			return products, nil
 		}
 		return products, fmt.Errorf("SearchProductsByCategory: %w", err)
@@ -197,7 +193,7 @@ func (p *productRepo) SearchProductsByName(ctx context.Context, productName stri
 	var product model.Product
 	err := p.pool.QueryRow(ctx, dbReq, productName).Scan(&product.SKU, &product.Name, &product.URI, &product.Description, &product.ID)
 	if err != nil {
-		if strings.Contains(err.Error(), "no rows in result set") {
+		if err == pgx.ErrNoRows {
 			return product, nil
 		}
 		return product, fmt.Errorf("SearchProductsByName: %w", err)
@@ -215,7 +211,7 @@ func (p *productRepo) SearchProductsByShop(ctx context.Context, shopID int) ([]m
 
 	rows, err := p.pool.Query(ctx, dbReq, shopID)
 	if err != nil {
-		if strings.Contains(err.Error(), "no rows in result set") {
+		if err == pgx.ErrNoRows {
 			return products, nil
 		}
 		return products, fmt.Errorf("SearchActiveProductsByShop: %w", err)

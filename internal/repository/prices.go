@@ -3,11 +3,9 @@ package repository
 import (
 	"context"
 	"fmt"
-	"log"
-	"market4/internal/model"
-	"strings"
-
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"market4/internal/model"
 )
 
 type priceRepo struct {
@@ -58,13 +56,11 @@ func (price *priceRepo) EditPrice(ctx context.Context, p *model.Price) (model.Pr
 		&result.IsActive,
 		&result.ProductID)
 	if err != nil {
-		if strings.Contains(err.Error(), "no rows in result set") {
+		if err == pgx.ErrNoRows {
 			return result, nil
 		}
 		return result, fmt.Errorf("EditPrice: %w", err)
 	}
-
-	log.Printf("Price for %s is updated", p.ProductID)
 	return result, nil
 }
 
@@ -83,13 +79,11 @@ func (price *priceRepo) EditPriceByProductID(ctx context.Context, p *model.Price
 		p.IsActive,
 		p.ProductID).Scan(&result.ID, &result.SalePrice, &result.FactoryPrice, &result.DiscountPrice, &result.IsActive, &result.ProductID)
 	if err != nil {
-		if strings.Contains(err.Error(), "no rows in result set") {
+		if err == pgx.ErrNoRows {
 			return result, nil
 		}
 		return result, fmt.Errorf("EditPriceByProductID: %w", err)
 	}
-
-	log.Printf("Price for %s is updated", p.ProductID)
 	return result, nil
 }
 
@@ -100,7 +94,7 @@ func (price *priceRepo) ListAllPrices(ctx context.Context) ([]model.Price, error
 		"FROM prices"
 	rows, err := price.pool.Query(ctx, dbReq)
 	if err != nil {
-		if strings.Contains(err.Error(), "no rows in result set") {
+		if err == pgx.ErrNoRows {
 			return prices, nil
 		}
 		return prices, fmt.Errorf("ListAllPrices: %w", err)
@@ -135,7 +129,7 @@ func (price *priceRepo) SearchPriceByProductID(ctx context.Context, productID st
 		&productPrice.ProductID,
 		&productPrice.IsActive)
 	if err != nil {
-		if strings.Contains(err.Error(), "no rows in result set") {
+		if err == pgx.ErrNoRows {
 			return productPrice, nil
 		}
 		return productPrice, fmt.Errorf("SearchPriceByProductID: %w", err)

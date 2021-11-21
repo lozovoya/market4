@@ -3,11 +3,10 @@ package repository
 import (
 	"context"
 	"fmt"
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
 	"market4/internal/model"
-	"strings"
-
-	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type shopRepo struct {
@@ -37,7 +36,7 @@ func (s *shopRepo) ListAllShops(ctx context.Context) ([]model.Shop, error) {
 	shops := make([]model.Shop, 0)
 	rows, err := s.pool.Query(ctx, dbReq)
 	if err != nil {
-		if strings.Contains(err.Error(), "no rows in result set") {
+		if err == pgx.ErrNoRows {
 			return shops, nil
 		}
 		return shops, fmt.Errorf("ListAllShops: %w", err)
@@ -48,12 +47,10 @@ func (s *shopRepo) ListAllShops(ctx context.Context) ([]model.Shop, error) {
 		var shop model.Shop
 		err = rows.Scan(&shop.ID, &shop.Name, &shop.Address, &shop.LON, &shop.LAT, &shop.WorkingHours)
 		if err != nil {
-			log.Println(err)
 			return shops, fmt.Errorf("ListAllShops: %w", err)
 		}
 		shops = append(shops, shop)
 	}
-
 	return shops, nil
 }
 
@@ -69,8 +66,6 @@ func (s *shopRepo) AddShop(ctx context.Context, shop *model.Shop) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("AddShop: %w", err)
 	}
-
-	log.Printf("shop %s is added", shop.Name)
 	return id, nil
 }
 
@@ -102,7 +97,5 @@ func (s *shopRepo) EditShop(ctx context.Context, shop *model.Shop) error {
 	if err != nil {
 		return fmt.Errorf("UpdateShopParameter: %w", err)
 	}
-
-	log.Printf("shop %d is updated", shop.ID)
 	return nil
 }
