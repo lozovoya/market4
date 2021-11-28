@@ -2,6 +2,7 @@ package v1
 
 import (
 	"encoding/json"
+	"github.com/unrolled/render"
 	"go.uber.org/zap"
 	"market4/internal/model"
 	"market4/internal/repository"
@@ -12,25 +13,30 @@ import (
 type Category struct {
 	categoryRepo repository.Category
 	lg           *zap.Logger
+	renderer     *render.Render
 }
 
-func NewCategory(categoryRepo repository.Category, lg *zap.Logger) *Category {
-	return &Category{categoryRepo: categoryRepo, lg: lg}
+func NewCategory(categoryRepo repository.Category, lg *zap.Logger, renderer *render.Render) *Category {
+	return &Category{categoryRepo: categoryRepo, lg: lg, renderer: renderer}
 }
 func (c *Category) ListAllCategories(writer http.ResponseWriter, request *http.Request) {
 	categories, err := c.categoryRepo.ListAllCategories(request.Context())
 	if err != nil {
 		c.lg.Error("ListAllCategories", zap.Error(err))
-
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-
+		err = c.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			c.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
 	categoriesList, err := views.CategoriesList(categories)
 	if err != nil {
 		c.lg.Error("ListAllCategories", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = c.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			c.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
@@ -38,7 +44,10 @@ func (c *Category) ListAllCategories(writer http.ResponseWriter, request *http.R
 	err = json.NewEncoder(writer).Encode(categoriesList)
 	if err != nil {
 		c.lg.Error("ListAllCategories", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = c.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			c.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 }
@@ -48,20 +57,29 @@ func (c *Category) AddCategory(writer http.ResponseWriter, request *http.Request
 	err := json.NewDecoder(request.Body).Decode(&data)
 	if err != nil {
 		c.lg.Error("AddCategory", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		err = c.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
+		if err != nil {
+			c.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
 	if IsEmpty(data.Name) {
 		c.lg.Error("field is empty")
-		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		err = c.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
+		if err != nil {
+			c.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
 	id, err := c.categoryRepo.AddCategory(request.Context(), data)
 	if err != nil {
 		c.lg.Error("AddCategory", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = c.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			c.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
@@ -74,7 +92,10 @@ func (c *Category) AddCategory(writer http.ResponseWriter, request *http.Request
 	err = json.NewEncoder(writer).Encode(reply)
 	if err != nil {
 		c.lg.Error("AddCategory", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = c.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			c.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 }
@@ -83,25 +104,37 @@ func (c *Category) EditCategory(writer http.ResponseWriter, request *http.Reques
 	err := json.NewDecoder(request.Body).Decode(&data)
 	if err != nil {
 		c.lg.Error("editCategory", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		err = c.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
+		if err != nil {
+			c.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 	if data.ID == 0 {
 		c.lg.Error("wrong ID")
-		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		err = c.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
+		if err != nil {
+			c.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
 	if IsEmpty(data.Name) {
 		c.lg.Error("field is empty")
-		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		err = c.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
+		if err != nil {
+			c.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
 	err = c.categoryRepo.EditCategory(request.Context(), data)
 	if err != nil {
 		c.lg.Error("editCategory", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = c.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			c.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 }

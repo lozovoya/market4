@@ -2,6 +2,7 @@ package v1
 
 import (
 	"encoding/json"
+	"github.com/unrolled/render"
 	"go.uber.org/zap"
 	"market4/internal/cache"
 	"market4/internal/model"
@@ -28,23 +29,39 @@ type Product struct {
 	priceRepo   repository.Price
 	stock       cache.Cache
 	lg          *zap.Logger
+	renderer    *render.Render
 }
 
-func NewProduct(productRepo repository.Product, priceRepo repository.Price, stock cache.Cache, lg *zap.Logger) *Product {
-	return &Product{productRepo: productRepo, priceRepo: priceRepo, stock: stock, lg: lg}
+func NewProduct(productRepo repository.Product,
+	priceRepo repository.Price,
+	stock cache.Cache,
+	lg *zap.Logger,
+	renderer *render.Render) *Product {
+	return &Product{productRepo: productRepo,
+		priceRepo: priceRepo,
+		stock:     stock,
+		lg:        lg,
+		renderer:  renderer}
 }
 func (p *Product) AddProduct(writer http.ResponseWriter, request *http.Request) {
 	var data *ProductDTO
+	writer.Header().Set("Content-Type", "application/json")
 	err := json.NewDecoder(request.Body).Decode(&data)
 	if err != nil {
 		p.lg.Error("addProduct", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		err = p.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
 	if IsEmpty(data.SKU) || IsEmpty(data.Name) || IsEmpty(data.Type) || IsEmpty(data.Description) {
 		p.lg.Error("addProduct: field id empty")
-		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		err = p.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
@@ -58,7 +75,10 @@ func (p *Product) AddProduct(writer http.ResponseWriter, request *http.Request) 
 	addedProduct, err := p.productRepo.AddProduct(request.Context(), product, data.Shop_ID, data.Category_ID)
 	if err != nil {
 		p.lg.Error("addProduct", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
@@ -74,7 +94,10 @@ func (p *Product) AddProduct(writer http.ResponseWriter, request *http.Request) 
 		editedPrice, err = p.priceRepo.AddPrice(request.Context(), &price)
 		if err != nil {
 			p.lg.Error("addProduct", zap.Error(err))
-			http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+			if err != nil {
+				p.lg.Error("Auth", zap.Error(err))
+			}
 			return
 		}
 	}
@@ -88,7 +111,10 @@ func (p *Product) AddProduct(writer http.ResponseWriter, request *http.Request) 
 	result, err := views.ProductsListWithPrices(productList, priceList)
 	if err != nil {
 		p.lg.Error("addProduct", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
@@ -96,7 +122,10 @@ func (p *Product) AddProduct(writer http.ResponseWriter, request *http.Request) 
 	err = json.NewEncoder(writer).Encode(result)
 	if err != nil {
 		p.lg.Error("addProduct", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 }
@@ -106,12 +135,18 @@ func (p *Product) EditProduct(writer http.ResponseWriter, request *http.Request)
 	err := json.NewDecoder(request.Body).Decode(&data)
 	if err != nil {
 		p.lg.Error("EditProduct", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		err = p.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 	if IsEmpty(data.SKU) {
 		p.lg.Error("EditProduct: SKU field is empty")
-		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		err = p.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
@@ -131,7 +166,10 @@ func (p *Product) EditProduct(writer http.ResponseWriter, request *http.Request)
 	editedProduct, err := p.productRepo.EditProduct(request.Context(), product, shopID, categoryID)
 	if err != nil {
 		p.lg.Error("EditProduct", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
@@ -147,7 +185,10 @@ func (p *Product) EditProduct(writer http.ResponseWriter, request *http.Request)
 		editedPrice, err = p.priceRepo.EditPriceByProductID(request.Context(), &price)
 		if err != nil {
 			p.lg.Error("EditProduct", zap.Error(err))
-			http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+			if err != nil {
+				p.lg.Error("Auth", zap.Error(err))
+			}
 			return
 		}
 	}
@@ -161,7 +202,10 @@ func (p *Product) EditProduct(writer http.ResponseWriter, request *http.Request)
 	result, err := views.ProductsListWithPrices(productList, priceList)
 	if err != nil {
 		p.lg.Error("EditProduct", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
@@ -169,7 +213,10 @@ func (p *Product) EditProduct(writer http.ResponseWriter, request *http.Request)
 	err = json.NewEncoder(writer).Encode(result)
 	if err != nil {
 		p.lg.Error("EditProduct", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 }
@@ -178,21 +225,30 @@ func (p *Product) ListAllProducts(writer http.ResponseWriter, request *http.Requ
 	products, err := p.productRepo.ListAllProducts(request.Context())
 	if err != nil {
 		p.lg.Error("ListAllProducts", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
 	prices, err := p.priceRepo.ListAllPrices(request.Context())
 	if err != nil {
 		p.lg.Error("ListAllProducts", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
 	productsList, err := views.ProductsListWithPrices(products, prices)
 	if err != nil {
 		p.lg.Error("ListAllProducts", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
@@ -200,7 +256,10 @@ func (p *Product) ListAllProducts(writer http.ResponseWriter, request *http.Requ
 	err = json.NewEncoder(writer).Encode(productsList)
 	if err != nil {
 		p.lg.Error("ListAllProducts", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 }
@@ -208,7 +267,10 @@ func (p *Product) SearchProductsByCategory(writer http.ResponseWriter, request *
 	productsList, err := p.stock.FromCache(request.Context(), request.RequestURI)
 	if err != nil {
 		p.lg.Error("SearchProductsByCategory", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 	if productsList != nil {
@@ -216,7 +278,10 @@ func (p *Product) SearchProductsByCategory(writer http.ResponseWriter, request *
 		_, err = writer.Write(productsList)
 		if err != nil {
 			p.lg.Error("SearchProductsByCategory", zap.Error(err))
-			http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+			if err != nil {
+				p.lg.Error("Auth", zap.Error(err))
+			}
 			return
 		}
 		return
@@ -225,14 +290,20 @@ func (p *Product) SearchProductsByCategory(writer http.ResponseWriter, request *
 	category, err := strconv.Atoi(chi.URLParam(request, "categoryID"))
 	if err != nil {
 		p.lg.Error("SearchProductsByCategory", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		err = p.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
 	products, err := p.productRepo.SearchProductsByCategory(request.Context(), category)
 	if err != nil {
 		p.lg.Error("SearchProductsByCategory", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
@@ -243,7 +314,10 @@ func (p *Product) SearchProductsByCategory(writer http.ResponseWriter, request *
 	pList, err := views.ProductsList(products)
 	if err != nil {
 		p.lg.Error("SearchProductsByCategory", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
@@ -251,14 +325,20 @@ func (p *Product) SearchProductsByCategory(writer http.ResponseWriter, request *
 	body, err := json.Marshal(pList)
 	if err != nil {
 		p.lg.Error("SearchProductsByCategory", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
 	_, err = writer.Write(body)
 	if err != nil {
 		p.lg.Error("SearchProductsByCategory", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
@@ -273,7 +353,10 @@ func (p *Product) SearchProductByName(writer http.ResponseWriter, request *http.
 		_, err := writer.Write(result)
 		if err != nil {
 			p.lg.Error("SearchProductByName", zap.Error(err))
-			http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+			if err != nil {
+				p.lg.Error("Auth", zap.Error(err))
+			}
 			return
 		}
 		return
@@ -283,7 +366,10 @@ func (p *Product) SearchProductByName(writer http.ResponseWriter, request *http.
 	product, err := p.productRepo.SearchProductsByName(request.Context(), productName)
 	if err != nil {
 		p.lg.Error("SearchProductByName", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 	if product.ID == "" {
@@ -292,7 +378,10 @@ func (p *Product) SearchProductByName(writer http.ResponseWriter, request *http.
 	price, err := p.priceRepo.SearchPriceByProductID(request.Context(), product.ID)
 	if err != nil {
 		p.lg.Error("SearchProductByName", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
@@ -305,7 +394,10 @@ func (p *Product) SearchProductByName(writer http.ResponseWriter, request *http.
 	result, err := views.ProductsListWithPrices(productList, priceList)
 	if err != nil {
 		p.lg.Error("SearchProductByName", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
@@ -313,13 +405,19 @@ func (p *Product) SearchProductByName(writer http.ResponseWriter, request *http.
 	body, err := json.Marshal(result)
 	if err != nil {
 		p.lg.Error("SearchProductByName", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 	_, err = writer.Write(body)
 	if err != nil {
 		p.lg.Error("SearchProductByName", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
@@ -332,13 +430,19 @@ func (p *Product) SearchActiveProductsOfShop(writer http.ResponseWriter, request
 	shopID, err := strconv.Atoi(chi.URLParam(request, "shopID"))
 	if err != nil {
 		p.lg.Error("SearchActiveProductsOfShop", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		err = p.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 	products, err := p.productRepo.SearchProductsByShop(request.Context(), shopID)
 	if err != nil {
 		p.lg.Error("SearchActiveProductsOfShop", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
@@ -352,7 +456,10 @@ func (p *Product) SearchActiveProductsOfShop(writer http.ResponseWriter, request
 			price, cerr := p.priceRepo.SearchPriceByProductID(request.Context(), product.ID)
 			if cerr != nil {
 				p.lg.Error("SearchActiveProductsOfShop", zap.Error(err))
-				http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+				if err != nil {
+					p.lg.Error("Auth", zap.Error(err))
+				}
 				return
 			}
 			prices = append(prices, price)
@@ -362,7 +469,10 @@ func (p *Product) SearchActiveProductsOfShop(writer http.ResponseWriter, request
 	productsList, err := views.ProductsListWithPrices(products, prices)
 	if err != nil {
 		p.lg.Error("SearchActiveProductsOfShop", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
@@ -370,7 +480,10 @@ func (p *Product) SearchActiveProductsOfShop(writer http.ResponseWriter, request
 	err = json.NewEncoder(writer).Encode(productsList)
 	if err != nil {
 		p.lg.Error("SearchActiveProductsOfShop", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			p.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 }

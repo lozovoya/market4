@@ -2,6 +2,7 @@ package v1
 
 import (
 	"encoding/json"
+	"github.com/unrolled/render"
 	"go.uber.org/zap"
 	"market4/internal/model"
 	"market4/internal/repository"
@@ -21,10 +22,11 @@ type PriceDTO struct {
 type Price struct {
 	priceRepo repository.Price
 	lg        *zap.Logger
+	renderer  *render.Render
 }
 
-func NewPrice(priceRepo repository.Price, lg *zap.Logger) *Price {
-	return &Price{priceRepo: priceRepo, lg: lg}
+func NewPrice(priceRepo repository.Price, lg *zap.Logger, renderer *render.Render) *Price {
+	return &Price{priceRepo: priceRepo, lg: lg, renderer: renderer}
 }
 
 func (price *Price) AddPrice(writer http.ResponseWriter, request *http.Request) {
@@ -32,7 +34,10 @@ func (price *Price) AddPrice(writer http.ResponseWriter, request *http.Request) 
 	err := json.NewDecoder(request.Body).Decode(&data)
 	if err != nil {
 		price.lg.Error("addPrice", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		err = price.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
+		if err != nil {
+			price.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
@@ -46,7 +51,10 @@ func (price *Price) AddPrice(writer http.ResponseWriter, request *http.Request) 
 	addedPrice, err := price.priceRepo.AddPrice(request.Context(), &p)
 	if err != nil {
 		price.lg.Error("addPrice", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = price.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			price.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
@@ -54,7 +62,10 @@ func (price *Price) AddPrice(writer http.ResponseWriter, request *http.Request) 
 	err = json.NewEncoder(writer).Encode(addedPrice)
 	if err != nil {
 		price.lg.Error("addPrice", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = price.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			price.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 }
@@ -64,13 +75,19 @@ func (price *Price) EditPrice(writer http.ResponseWriter, request *http.Request)
 	err := json.NewDecoder(request.Body).Decode(&data)
 	if err != nil {
 		price.lg.Error("EditPrice", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		err = price.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
+		if err != nil {
+			price.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
 	if data.ID == 0 {
 		price.lg.Error("EditPrice: id is empty")
-		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		err = price.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
+		if err != nil {
+			price.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
@@ -85,7 +102,10 @@ func (price *Price) EditPrice(writer http.ResponseWriter, request *http.Request)
 	editedPrice, err := price.priceRepo.EditPrice(request.Context(), &p)
 	if err != nil {
 		price.lg.Error("EditPrice", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = price.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			price.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
@@ -97,7 +117,10 @@ func (price *Price) EditPrice(writer http.ResponseWriter, request *http.Request)
 	result, err := views.PricesList(priceList)
 	if err != nil {
 		price.lg.Error("EditPrice", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = price.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			price.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
@@ -105,7 +128,10 @@ func (price *Price) EditPrice(writer http.ResponseWriter, request *http.Request)
 	err = json.NewEncoder(writer).Encode(result)
 	if err != nil {
 		price.lg.Error("EditPrice", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = price.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			price.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 }
@@ -114,14 +140,20 @@ func (price *Price) ListAllPrices(writer http.ResponseWriter, request *http.Requ
 	prices, err := price.priceRepo.ListAllPrices(request.Context())
 	if err != nil {
 		price.lg.Error("ListAllPrices", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = price.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			price.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
 	priceList, err := views.PricesList(prices)
 	if err != nil {
 		price.lg.Error("ListAllPrices", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = price.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			price.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 
@@ -129,7 +161,10 @@ func (price *Price) ListAllPrices(writer http.ResponseWriter, request *http.Requ
 	err = json.NewEncoder(writer).Encode(priceList)
 	if err != nil {
 		price.lg.Error("ListAllPrices", zap.Error(err))
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		err = price.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+		if err != nil {
+			price.lg.Error("Auth", zap.Error(err))
+		}
 		return
 	}
 }

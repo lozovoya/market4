@@ -2,6 +2,7 @@ package md
 
 import (
 	"github.com/dgrijalva/jwt-go"
+	"github.com/unrolled/render"
 	"go.uber.org/zap"
 	"io/ioutil"
 	"market4/internal/api/auth"
@@ -12,22 +13,32 @@ import (
 func Auth(role model.UserRole, lg *zap.Logger) func(handler http.Handler) http.Handler {
 	return func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			r := render.New()
 			publicKeySource, err := ioutil.ReadFile(auth.PUBLICKEY)
 			if err != nil {
 				lg.Error("Auth", zap.Error(err))
-				http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				err = r.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+				if err != nil {
+					lg.Error("Auth", zap.Error(err))
+				}
 				return
 			}
 			publicKey, err := jwt.ParseRSAPublicKeyFromPEM(publicKeySource)
 			if err != nil {
 				lg.Error("Auth", zap.Error(err))
-				http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				err = r.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
+				if err != nil {
+					lg.Error("Auth", zap.Error(err))
+				}
 				return
 			}
 			token := request.Header.Get("Authorization")
 			if token == "" {
 				lg.Error("Auth: empty token")
-				http.Error(writer, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+				err = r.JSON(writer, http.StatusUnauthorized, map[string]string{"Error": "Unauthorized"})
+				if err != nil {
+					lg.Error("Auth", zap.Error(err))
+				}
 				return
 			}
 			payload, err := jwt.ParseWithClaims(token, &auth.Payload{}, func(token *jwt.Token) (interface{}, error) {
@@ -35,17 +46,26 @@ func Auth(role model.UserRole, lg *zap.Logger) func(handler http.Handler) http.H
 			})
 			if err != nil {
 				lg.Error("Auth", zap.Error(err))
-				http.Error(writer, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+				err = r.JSON(writer, http.StatusUnauthorized, map[string]string{"Error": "Unauthorized"})
+				if err != nil {
+					lg.Error("Auth", zap.Error(err))
+				}
 				return
 			}
 			if !payload.Valid {
 				lg.Error("Auth", zap.Error(err))
-				http.Error(writer, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+				err = r.JSON(writer, http.StatusUnauthorized, map[string]string{"Error": "Unauthorized"})
+				if err != nil {
+					lg.Error("Auth", zap.Error(err))
+				}
 				return
 			}
 			claims, ok := payload.Claims.(*auth.Payload)
 			if !ok {
-				http.Error(writer, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+				err = r.JSON(writer, http.StatusUnauthorized, map[string]string{"Error": "Unauthorized"})
+				if err != nil {
+					lg.Error("Auth", zap.Error(err))
+				}
 				return
 			}
 
@@ -55,7 +75,10 @@ func Auth(role model.UserRole, lg *zap.Logger) func(handler http.Handler) http.H
 					return
 				}
 			}
-			http.Error(writer, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			err = r.JSON(writer, http.StatusUnauthorized, map[string]string{"Error": "Unauthorized"})
+			if err != nil {
+				lg.Error("Auth", zap.Error(err))
+			}
 		})
 	}
 }

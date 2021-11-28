@@ -10,6 +10,11 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
+type ErrResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
 func NewRouter(
 	mux *chi.Mux,
 	lg *zap.Logger,
