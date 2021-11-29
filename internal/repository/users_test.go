@@ -76,7 +76,7 @@ func (suite *UsersTestSuite) SetupTest() {
 func (suite *UsersTestSuite) TearDownTest() {
 	fmt.Println("cleaning up")
 	var err error
-	_, err = suite.testRepo.pool.Query(context.Background(), "DROP TABLE userroles, roles, users CASCADE;")
+	_, err = suite.testRepo.pool.Exec(context.Background(), "DROP TABLE userroles, roles, users CASCADE;")
 	if err != nil {
 		suite.Error(err)
 	}
@@ -160,7 +160,7 @@ func (suite *UsersTestSuite) Test_EditUser() {
 		"INTO users (login, password) " +
 		"VALUES ('user1','$2a$10$5h6GDvR0EBtCECFgptg6iuiOu0jkc/qJ8if9jt39NY9ir602nOcXu');"
 	var err error
-	_, err = suite.testRepo.pool.Query(context.Background(), addTestUserReq)
+	_, err = suite.testRepo.pool.Exec(context.Background(), addTestUserReq)
 	if err != nil {
 		suite.Error(err)
 		return
@@ -230,7 +230,7 @@ func (suite *UsersTestSuite) Test_GetUserRolesByID() {
 		"INTO users (login, password) " +
 		"VALUES ('user1','$2a$10$5h6GDvR0EBtCECFgptg6iuiOu0jkc/qJ8if9jt39NY9ir602nOcXu');"
 	var err error
-	_, err = suite.testRepo.pool.Query(context.Background(), addTestUserReq)
+	_, err = suite.testRepo.pool.Exec(context.Background(), addTestUserReq)
 	if err != nil {
 		suite.Error(err)
 		return
@@ -238,7 +238,7 @@ func (suite *UsersTestSuite) Test_GetUserRolesByID() {
 	addUserRoleReq := "INSERT " +
 		"INTO userroles (user_id, role_id) " +
 		"VALUES (1, 2);"
-	_, err = suite.testRepo.pool.Query(context.Background(), addUserRoleReq)
+	_, err = suite.testRepo.pool.Exec(context.Background(), addUserRoleReq)
 	if err != nil {
 		suite.Error(err)
 		return
@@ -294,7 +294,7 @@ func (suite *UsersTestSuite) Test_AddRole() {
 		"INTO users (login, password) " +
 		"VALUES ('user1','$2a$10$5h6GDvR0EBtCECFgptg6iuiOu0jkc/qJ8if9jt39NY9ir602nOcXu');"
 	var err error
-	_, err = suite.testRepo.pool.Query(context.Background(), addTestUserReq)
+	_, err = suite.testRepo.pool.Exec(context.Background(), addTestUserReq)
 	if err != nil {
 		suite.Error(err)
 		return
@@ -359,7 +359,7 @@ func (suite *UsersTestSuite) Test_RemoveRole() {
 	addUserRoleReq := "INSERT " +
 		"INTO userroles (user_id, role_id) " +
 		"VALUES (1, 2);"
-	_, err = suite.testRepo.pool.Query(context.Background(), addUserRoleReq)
+	_, err = suite.testRepo.pool.Exec(context.Background(), addUserRoleReq)
 	if err != nil {
 		suite.Fail("test RemoveRole failed", err)
 		return
@@ -416,7 +416,7 @@ func (suite *UsersTestSuite) Test_CheckCreds() {
 		"INTO users (login, password) " +
 		"VALUES ('user1','$2a$10$5h6GDvR0EBtCECFgptg6iuiOu0jkc/qJ8if9jt39NY9ir602nOcXu');"
 	var err error
-	_, err = suite.testRepo.pool.Query(context.Background(), addTestUserReq)
+	_, err = suite.testRepo.pool.Exec(context.Background(), addTestUserReq)
 	if err != nil {
 		suite.Error(err)
 		return
@@ -470,7 +470,7 @@ func (suite *UsersTestSuite) Test_GetUserID() {
 		"INTO users (login, password) " +
 		"VALUES ('user1','$2a$10$5h6GDvR0EBtCECFgptg6iuiOu0jkc/qJ8if9jt39NY9ir602nOcXu');"
 	var err error
-	_, err = suite.testRepo.pool.Query(context.Background(), addTestUserReq)
+	_, err = suite.testRepo.pool.Exec(context.Background(), addTestUserReq)
 	if err != nil {
 		suite.Error(err)
 		return
@@ -526,8 +526,7 @@ func (suite *UsersTestSuite) Test_GetUserID() {
 
 func (suite *UsersTestSuite) Test_GetRoleByID() {
 	type args struct {
-		ctx  context.Context
-		user *model.User
+		ctx context.Context
 	}
 	tests := []struct {
 		name    string

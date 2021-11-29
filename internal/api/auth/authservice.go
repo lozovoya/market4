@@ -19,7 +19,6 @@ type AuthService struct {
 	privateKey *rsa.PrivateKey
 	publicKey  *rsa.PublicKey
 	usersRepo  repository.Users
-	lg         *zap.Logger
 }
 
 func NewAuthService(privateKey, publicKey string, usersRepo repository.Users, lg *zap.Logger) *AuthService {

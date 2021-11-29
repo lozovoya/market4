@@ -70,7 +70,7 @@ func (s *Shop) ListAllShops(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	shopList, err := views.ShopList(&shops)
+	shopList, err := views.MakeShopList(&shops)
 	if err != nil {
 		s.lg.Error("ListAllShops", zap.Error(err))
 		err = s.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})

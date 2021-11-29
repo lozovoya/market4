@@ -4,7 +4,7 @@ import (
 	"market4/internal/model"
 )
 
-func ShopList(shops *[]model.Shop) (*ShopListDTO, error) {
+func MakeShopList(shops *[]model.Shop) (*ShopListDTO, error) {
 	if len(*shops) == 0 {
 		return nil, nil
 	}

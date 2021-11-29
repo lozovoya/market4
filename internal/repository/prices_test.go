@@ -30,7 +30,7 @@ func (suite *PricesTestSuite) SetupTest() {
 	}
 
 	createExtensionReq := "CREATE EXTENSION pgcrypto;"
-	_, err = suite.testRepo.pool.Query(context.Background(), createExtensionReq)
+	_, err = suite.testRepo.pool.Exec(context.Background(), createExtensionReq)
 	if err != nil {
 		suite.Fail("setup failed: createExtensionReq", err)
 		return
@@ -46,7 +46,7 @@ func (suite *PricesTestSuite) SetupTest() {
 		"is_active       BOOL NOT NULL, " +
 		"created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
 		"updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);"
-	_, err = suite.testRepo.pool.Query(context.Background(), createTableProductsReq)
+	_, err = suite.testRepo.pool.Exec(context.Background(), createTableProductsReq)
 	if err != nil {
 		suite.Error(err)
 		suite.Fail("setup failed: createTableProductsReq")
@@ -63,7 +63,7 @@ func (suite *PricesTestSuite) SetupTest() {
 		"is_active       BOOL NOT NULL, " +
 		"created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
 		"updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);"
-	_, err = suite.testRepo.pool.Query(context.Background(), createTablePricesReq)
+	_, err = suite.testRepo.pool.Exec(context.Background(), createTablePricesReq)
 	if err != nil {
 		suite.Error(err)
 		suite.Fail("setup failed: createTablePricesReq")
@@ -79,8 +79,12 @@ func (suite *PricesTestSuite) SetupTest() {
 		suite.Fail("setup failed: addProductReq", err)
 		return
 	}
-	addPriceReq := fmt.Sprintf("INSERT INTO prices (sale_price, factory_price, discount_price, product_id, is_active) VALUES (2000, 1000, 1600, '%s', true);", suite.productID)
-	_, err = suite.testRepo.pool.Query(context.Background(), addPriceReq)
+	addPriceReq := fmt.Sprintf(`
+	INSERT 
+	INTO prices (sale_price, factory_price, discount_price, product_id, is_active)
+	VALUES (2000, 1000, 1600, %s, true);
+	`, suite.productID)
+	_, err = suite.testRepo.pool.Exec(context.Background(), addPriceReq)
 	if err != nil {
 		suite.Error(err)
 		suite.Fail("setup failed: addPriceReq ")
@@ -91,7 +95,7 @@ func (suite *PricesTestSuite) SetupTest() {
 func (suite *PricesTestSuite) TearDownTest() {
 	fmt.Println("cleaning up")
 	var err error
-	_, err = suite.testRepo.pool.Query(context.Background(), "DROP TABLE prices, products CASCADE;")
+	_, err = suite.testRepo.pool.Exec(context.Background(), "DROP TABLE prices, products CASCADE;")
 	if err != nil {
 		suite.Error(err)
 		suite.Fail("cleaning failed")

@@ -30,7 +30,7 @@ func (c *Category) ListAllCategories(writer http.ResponseWriter, request *http.R
 		return
 	}
 
-	categoriesList, err := views.CategoriesList(categories)
+	categoriesList, err := views.MakeCategoriesList(categories)
 	if err != nil {
 		c.lg.Error("ListAllCategories", zap.Error(err))
 		err = c.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})

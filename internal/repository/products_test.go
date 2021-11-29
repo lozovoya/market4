@@ -143,7 +143,7 @@ func (suite *ProductTestSuite) SetupTest() {
 func (suite *ProductTestSuite) TearDownTest() {
 	fmt.Println("cleaning up")
 	var err error
-	_, err = suite.testRepo.pool.Query(context.Background(),
+	_, err = suite.testRepo.pool.Exec(context.Background(),
 		"DROP TABLE products, categories, shops, productshop, productcategory CASCADE;")
 	if err != nil {
 		suite.Error(err)

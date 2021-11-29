@@ -34,7 +34,7 @@ func (suite *CategoriesTestSuite) SetupTest() {
 		"uri_name TEXT UNIQUE, " +
 		"created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
 		"updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);"
-	_, err = suite.testRepo.pool.Query(context.Background(), createTableCategoriesReq)
+	_, err = suite.testRepo.pool.Exec(context.Background(), createTableCategoriesReq)
 	if err != nil {
 		suite.Error(err)
 		suite.Fail("setup failed")
@@ -46,7 +46,7 @@ func (suite *CategoriesTestSuite) SetupTest() {
 		"VALUES ('Стройматериалы', 'Стройматериалы-1'), " +
 		"('Игрушки', 'Игрушки-2');"
 
-	_, err = suite.testRepo.pool.Query(context.Background(), addCategoriesReq)
+	_, err = suite.testRepo.pool.Exec(context.Background(), addCategoriesReq)
 	if err != nil {
 		suite.Error(err)
 		suite.Fail("setup failed")
@@ -57,7 +57,7 @@ func (suite *CategoriesTestSuite) SetupTest() {
 func (suite *CategoriesTestSuite) TearDownTest() {
 	fmt.Println("cleaning up")
 	var err error
-	_, err = suite.testRepo.pool.Query(context.Background(), "DROP TABLE categories CASCADE;")
+	_, err = suite.testRepo.pool.Exec(context.Background(), "DROP TABLE categories CASCADE;")
 	if err != nil {
 		suite.Error(err)
 		suite.Fail("cleaning failed")

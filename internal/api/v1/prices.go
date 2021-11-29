@@ -114,7 +114,7 @@ func (price *Price) EditPrice(writer http.ResponseWriter, request *http.Request)
 	}
 	var priceList = make([]model.Price, 0)
 	priceList = append(priceList, editedPrice)
-	result, err := views.PricesList(priceList)
+	result, err := views.MakePricesList(priceList)
 	if err != nil {
 		price.lg.Error("EditPrice", zap.Error(err))
 		err = price.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
@@ -147,7 +147,7 @@ func (price *Price) ListAllPrices(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	priceList, err := views.PricesList(prices)
+	priceList, err := views.MakePricesList(prices)
 	if err != nil {
 		price.lg.Error("ListAllPrices", zap.Error(err))
 		err = price.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})

@@ -108,7 +108,7 @@ func (p *Product) AddProduct(writer http.ResponseWriter, request *http.Request) 
 	var priceList = make([]model.Price, 0)
 	priceList = append(priceList, editedPrice)
 
-	result, err := views.ProductsListWithPrices(productList, priceList)
+	result, err := views.MakeProductsListWithPrices(productList, priceList)
 	if err != nil {
 		p.lg.Error("addProduct", zap.Error(err))
 		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
@@ -199,7 +199,7 @@ func (p *Product) EditProduct(writer http.ResponseWriter, request *http.Request)
 	var priceList = make([]model.Price, 0)
 	priceList = append(priceList, editedPrice)
 
-	result, err := views.ProductsListWithPrices(productList, priceList)
+	result, err := views.MakeProductsListWithPrices(productList, priceList)
 	if err != nil {
 		p.lg.Error("EditProduct", zap.Error(err))
 		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
@@ -242,7 +242,7 @@ func (p *Product) ListAllProducts(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	productsList, err := views.ProductsListWithPrices(products, prices)
+	productsList, err := views.MakeProductsListWithPrices(products, prices)
 	if err != nil {
 		p.lg.Error("ListAllProducts", zap.Error(err))
 		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
@@ -311,7 +311,7 @@ func (p *Product) SearchProductsByCategory(writer http.ResponseWriter, request *
 		return
 	}
 
-	pList, err := views.ProductsList(products)
+	pList, err := views.MakeProductsList(products)
 	if err != nil {
 		p.lg.Error("SearchProductsByCategory", zap.Error(err))
 		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
@@ -391,7 +391,7 @@ func (p *Product) SearchProductByName(writer http.ResponseWriter, request *http.
 	var priceList = make([]model.Price, 0)
 	priceList = append(priceList, price)
 
-	result, err := views.ProductsListWithPrices(productList, priceList)
+	result, err := views.MakeProductsListWithPrices(productList, priceList)
 	if err != nil {
 		p.lg.Error("SearchProductByName", zap.Error(err))
 		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})
@@ -466,7 +466,7 @@ func (p *Product) SearchActiveProductsOfShop(writer http.ResponseWriter, request
 		}
 	}
 
-	productsList, err := views.ProductsListWithPrices(products, prices)
+	productsList, err := views.MakeProductsListWithPrices(products, prices)
 	if err != nil {
 		p.lg.Error("SearchActiveProductsOfShop", zap.Error(err))
 		err = p.renderer.JSON(writer, http.StatusInternalServerError, map[string]string{"Error": "InternalServerError"})

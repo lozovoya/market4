@@ -32,7 +32,7 @@ func (suite *ShopsTestSuite) SetupTest() {
 		"working_hours   TEXT, " +
 		"created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
 		"updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);"
-	_, err = suite.testRepo.pool.Query(context.Background(), createTableShopsReq)
+	_, err = suite.testRepo.pool.Exec(context.Background(), createTableShopsReq)
 	if err != nil {
 		suite.Error(err)
 		return
@@ -42,7 +42,7 @@ func (suite *ShopsTestSuite) SetupTest() {
 		"INTO shops (name, address, lon, lat, working_hours) " +
 		"VALUES ('Магазин на диване', 'Москва, Останкино', '324234' , '5465476', '8 - 20');"
 
-	_, err = suite.testRepo.pool.Query(context.Background(), addShopReq)
+	_, err = suite.testRepo.pool.Exec(context.Background(), addShopReq)
 	if err != nil {
 		suite.Error(err)
 		return
@@ -52,7 +52,7 @@ func (suite *ShopsTestSuite) SetupTest() {
 func (suite *ShopsTestSuite) TearDownTest() {
 	fmt.Println("cleaning up")
 	var err error
-	_, err = suite.testRepo.pool.Query(context.Background(), "DROP TABLE shops CASCADE;")
+	_, err = suite.testRepo.pool.Exec(context.Background(), "DROP TABLE shops CASCADE;")
 	if err != nil {
 		suite.Error(err)
 	}
@@ -112,7 +112,7 @@ func (suite *ShopsTestSuite) Test_ListAllShops() {
 		"INTO shops (name, address, lon, lat, working_hours) " +
 		"VALUES ('Магазин для взрослых', 'Ростов, кремль', '12334' , '5465476', '8 - 20');"
 	var err error
-	_, err = suite.testRepo.pool.Query(context.Background(), addShopReq)
+	_, err = suite.testRepo.pool.Exec(context.Background(), addShopReq)
 	if err != nil {
 		suite.Error(err)
 		suite.Fail("addShopReq failed")

@@ -6,7 +6,7 @@ import (
 	"market4/internal/model"
 )
 
-func PricesList(prices []model.Price) (*PricesListDTO, error) {
+func MakePricesList(prices []model.Price) (*PricesListDTO, error) {
 	if len(prices) == 0 {
 		err := errors.New("Price list is empty")
 		return nil, fmt.Errorf("PricesList: %w", err)
