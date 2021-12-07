@@ -148,7 +148,8 @@ func (suite *PricesTestSuite) Test_priceRepo_AddPrice() {
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			got, err := suite.testRepo.AddPrice(tt.args.ctx, tt.args.p)
 			if (err != nil) != tt.wantErr {
@@ -212,7 +213,8 @@ func (suite *PricesTestSuite) Test_priceRepo_EditPrice() {
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			got, err := suite.testRepo.EditPrice(tt.args.ctx, tt.args.p)
 			if err != nil {
@@ -281,7 +283,8 @@ func (suite *PricesTestSuite) Test_priceRepo_EditPriceByProductID() {
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			got, err := suite.testRepo.EditPriceByProductID(tt.args.ctx, tt.args.p)
 			if err != nil {
@@ -326,7 +329,8 @@ func (suite *PricesTestSuite) Test_priceRepo_ListAllPrices() {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			got, err := suite.testRepo.ListAllPrices(tt.args.ctx)
 			if err != nil {
@@ -384,7 +388,8 @@ func (suite *PricesTestSuite) Test_priceRepo_SearchPriceByProductID() {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			got, err := suite.testRepo.SearchPriceByProductID(tt.args.ctx, tt.args.productID)
 			if err != nil {

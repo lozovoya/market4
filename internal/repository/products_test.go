@@ -178,7 +178,8 @@ func (suite *ProductTestSuite) Test_productRepo_IfProductExists() {
 			want: false,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			if got := suite.testRepo.IfProductExists(tt.args.ctx, tt.args.productID); got != tt.want {
 				fmt.Printf("IfProductExists() = %v, want %v", got, tt.want)
@@ -218,7 +219,8 @@ func (suite *ProductTestSuite) Test_productRepo_setProductCategory() {
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			err := suite.testRepo.setProductCategory(tt.args.ctx, tt.args.categoryId, tt.args.productId)
 			if err != nil {
@@ -262,7 +264,8 @@ func (suite *ProductTestSuite) Test_productRepo_setProductShop() {
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			err := suite.testRepo.setProductShop(tt.args.ctx, tt.args.shopID, tt.args.productID)
 			if err != nil {
@@ -323,7 +326,8 @@ func (suite *ProductTestSuite) Test_productRepo_EditProduct() {
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			got, err := suite.testRepo.EditProduct(tt.args.ctx, tt.args.product, tt.args.shopID, tt.args.categoryID)
 			if err != nil {
@@ -371,7 +375,8 @@ func (suite *ProductTestSuite) Test_productRepo_ListAllProducts() {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			got, err := suite.testRepo.ListAllProducts(tt.args.ctx)
 			if err != nil {
@@ -430,7 +435,8 @@ func (suite *ProductTestSuite) Test_productRepo_SearchProductsByCategory() {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			got, err := suite.testRepo.SearchProductsByCategory(tt.args.ctx, tt.args.category)
 			if err != nil {
@@ -495,7 +501,8 @@ func (suite *ProductTestSuite) Test_productRepo_SearchProductsByName() {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			got, err := suite.testRepo.SearchProductsByName(tt.args.ctx, tt.args.productName)
 			if err != nil {
@@ -554,7 +561,8 @@ func (suite *ProductTestSuite) Test_productRepo_SearchProductsByShop() {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			got, err := suite.testRepo.SearchProductsByShop(tt.args.ctx, tt.args.shopID)
 			if err != nil {

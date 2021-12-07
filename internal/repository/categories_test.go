@@ -91,7 +91,8 @@ func (suite *CategoriesTestSuite) Test_categoryRepo_IfCategoryExists() {
 			want: false,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			got := suite.testRepo.IfCategoryExists(tt.args.ctx, tt.args.category)
 			if got != tt.want {
@@ -132,7 +133,8 @@ func (suite *CategoriesTestSuite) Test_categoryRepo_ListAllCategories() {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			got, err := suite.testRepo.ListAllCategories(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
@@ -182,7 +184,8 @@ func (suite *CategoriesTestSuite) Test_categoryRepo_AddCategory() {
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			got, err := suite.testRepo.AddCategory(tt.args.ctx, tt.args.category)
 			if (err != nil) != tt.wantErr {
@@ -231,7 +234,8 @@ func (suite *CategoriesTestSuite) Test_categoryRepo_EditCategory() {
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			err := suite.testRepo.EditCategory(tt.args.ctx, tt.args.category)
 			fmt.Printf("GOT: %v", err)

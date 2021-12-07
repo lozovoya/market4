@@ -1,13 +1,14 @@
 package md
 
 import (
-	"github.com/dgrijalva/jwt-go"
-	"github.com/unrolled/render"
-	"go.uber.org/zap"
 	"io/ioutil"
 	"market4/internal/api/auth"
 	"market4/internal/model"
 	"net/http"
+
+	"github.com/dgrijalva/jwt-go"
+	"github.com/unrolled/render"
+	"go.uber.org/zap"
 )
 
 func Auth(role model.UserRole, lg *zap.Logger) func(handler http.Handler) http.Handler {

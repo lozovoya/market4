@@ -2,12 +2,13 @@ package v1
 
 import (
 	"encoding/json"
-	"github.com/unrolled/render"
-	"go.uber.org/zap"
 	"market4/internal/api/auth"
 	"market4/internal/model"
 	"market4/internal/repository"
 	"net/http"
+
+	"github.com/unrolled/render"
+	"go.uber.org/zap"
 )
 
 type Token struct {

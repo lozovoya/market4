@@ -4,11 +4,12 @@ import (
 	"context"
 	"crypto/rsa"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
-	"go.uber.org/zap"
 	"io/ioutil"
 	"market4/internal/repository"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
+	"go.uber.org/zap"
 )
 
 const (

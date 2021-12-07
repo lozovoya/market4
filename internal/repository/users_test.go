@@ -138,7 +138,8 @@ func (suite *UsersTestSuite) Test_AddUser() {
 		},
 	}
 	wg := sync.WaitGroup{}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		wg.Add(1)
 		suite.Run(tt.name, func() {
 			got, err := suite.testRepo.AddUser(tt.args.ctx, tt.args.user)
@@ -203,7 +204,8 @@ func (suite *UsersTestSuite) Test_EditUser() {
 		},
 	}
 	wg := sync.WaitGroup{}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		wg.Add(1)
 		suite.Run(tt.name, func() {
 			got, err := suite.testRepo.EditUser(tt.args.ctx, tt.args.user)
@@ -266,7 +268,8 @@ func (suite *UsersTestSuite) Test_GetUserRolesByID() {
 		},
 	}
 	wg := sync.WaitGroup{}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		wg.Add(1)
 		suite.Run(tt.name, func() {
 			got, err := suite.testRepo.GetUserRolesByID(tt.args.ctx, tt.args.user.ID)
@@ -332,7 +335,8 @@ func (suite *UsersTestSuite) Test_AddRole() {
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			err := suite.testRepo.AddRole(tt.args.ctx, tt.args.user.Login, tt.args.user.Role)
 			if err != nil {
@@ -396,7 +400,8 @@ func (suite *UsersTestSuite) Test_RemoveRole() {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			err := suite.testRepo.RemoveRole(tt.args.ctx, tt.args.user.Login, tt.args.user.Role)
 			if err != nil {
@@ -453,7 +458,8 @@ func (suite *UsersTestSuite) Test_CheckCreds() {
 			want: false,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			got := suite.testRepo.CheckCreds(tt.args.ctx, tt.args.user)
 			fmt.Printf("GOT %v", got)
@@ -508,7 +514,8 @@ func (suite *UsersTestSuite) Test_GetUserID() {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			got, err := suite.testRepo.GetUserID(tt.args.ctx, tt.args.user.Login)
 			if (err != nil) != tt.wantErr {
@@ -554,7 +561,8 @@ func (suite *UsersTestSuite) Test_GetRoleByID() {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			got, err := suite.testRepo.GetRoleByID(tt.args.ctx, tt.roleID)
 			if (err != nil) != tt.wantErr {

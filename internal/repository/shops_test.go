@@ -92,7 +92,8 @@ func (suite *ShopsTestSuite) Test_IfShopExists() {
 		},
 	}
 
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			got := suite.testRepo.IfShopExists(tt.args.ctx, tt.args.shop.ID)
 			if got != tt.want {
@@ -154,7 +155,8 @@ func (suite *ShopsTestSuite) Test_ListAllShops() {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			got, err := suite.testRepo.ListAllShops(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
@@ -198,7 +200,8 @@ func (suite *ShopsTestSuite) Test_AddShop() {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			got, err := suite.testRepo.AddShop(tt.args.ctx, tt.args.shop)
 			if (err != nil) != tt.wantErr {
@@ -241,7 +244,8 @@ func (suite *ShopsTestSuite) Test_EditShop() {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		suite.Run(tt.name, func() {
 			if err := suite.testRepo.EditShop(tt.args.ctx, tt.args.shop); (err != nil) != tt.wantErr {
 				fmt.Printf("EditShop() error = %v, wantErr %v", err, tt.wantErr)
