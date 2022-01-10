@@ -31,7 +31,8 @@ func (u *Users) AddUser(writer http.ResponseWriter, request *http.Request) {
 		}
 		return
 	}
-	if IsEmpty(data.Login) || IsEmpty(data.Password) || IsEmpty(data.Role) {
+	err = checkMandatoryFields(data.Login, data.Password, data.Role)
+	if err != nil {
 		u.lg.Error("AddUser: field is empty")
 		err = u.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
 		if err != nil {
@@ -71,7 +72,8 @@ func (u *Users) EditUser(writer http.ResponseWriter, request *http.Request) {
 		}
 		return
 	}
-	if IsEmpty(data.Login) || IsEmpty(data.Password) {
+	err = checkMandatoryFields(data.Login, data.Password)
+	if err != nil {
 		u.lg.Error("EditUser: field is empty")
 		err = u.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
 		if err != nil {
@@ -112,7 +114,6 @@ func (u *Users) AddRole(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	err = checkMandatoryFields(data.Login, data.Role)
-	// if IsEmpty(data.Login) || IsEmpty(data.Role) {
 	if err != nil {
 		u.lg.Error("AddRole: field is empty")
 		err = u.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
@@ -144,7 +145,8 @@ func (u *Users) RemoveRole(writer http.ResponseWriter, request *http.Request) {
 		}
 		return
 	}
-	if IsEmpty(data.Login) || IsEmpty(data.Role) {
+	err = checkMandatoryFields(data.Login, data.Role)
+	if err != nil {
 		u.lg.Error("RemoveRole: field is empty")
 		err = u.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
 		if err != nil {

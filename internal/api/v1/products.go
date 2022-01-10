@@ -56,8 +56,8 @@ func (p *Product) AddProduct(writer http.ResponseWriter, request *http.Request) 
 		}
 		return
 	}
-
-	if IsEmpty(data.SKU) || IsEmpty(data.Name) || IsEmpty(data.Type) || IsEmpty(data.Description) {
+	err = checkMandatoryFields(data.SKU, data.Name, data.Type, data.Description)
+	if err != nil {
 		p.lg.Error("addProduct: field id empty")
 		err = p.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
 		if err != nil {
@@ -142,7 +142,8 @@ func (p *Product) EditProduct(writer http.ResponseWriter, request *http.Request)
 		}
 		return
 	}
-	if IsEmpty(data.SKU) {
+	err = checkMandatoryFields(data.SKU)
+	if err != nil {
 		p.lg.Error("EditProduct: SKU field is empty")
 		err = p.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
 		if err != nil {
