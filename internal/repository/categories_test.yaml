@@ -1,0 +1,19 @@
+conf:
+  setup:
+    requests:
+      - request: CREATE
+                 TABLE categories (
+                   id BIGSERIAL PRIMARY KEY,
+                   name TEXT NOT NULL UNIQUE,
+                   uri_name TEXT UNIQUE,
+                   created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                   updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                 );
+      - request: INSERT
+                 INTO categories (name, uri_name)
+                 VALUES ('Стройматериалы', 'Стройматериалы-1'),
+                 ('Игрушки', 'Игрушки-2');
+  teardown:
+    requests:
+      - request: DROP TABLE categories CASCADE;
+

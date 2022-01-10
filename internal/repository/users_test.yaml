@@ -1,0 +1,27 @@
+conf:
+  setup:
+    requests:
+      - request: CREATE
+                 TABLE users (
+                    id BIGSERIAL PRIMARY KEY,
+                    login TEXT NOT NULL UNIQUE,
+                    password TEXT NOT NULL
+                 );
+      - request: CREATE
+                 TABLE roles (
+                    id BIGSERIAL PRIMARY KEY,
+                    name TEXT NOT NULL UNIQUE
+                 );
+      - request: CREATE
+                 TABLE userroles (
+                    user_id BIGINT NOT NULL REFERENCES users,
+                    role_id BIGINT NOT NULL REFERENCES roles,
+                    PRIMARY KEY (user_id, role_id)
+                 );
+      - request: INSERT
+                 INTO roles (name)
+                 VALUES ('USER'), ('ADMIN');
+  teardown:
+    requests:
+      - request: DROP TABLE userroles, roles, users CASCADE;
+

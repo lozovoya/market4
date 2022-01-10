@@ -3,106 +3,76 @@ package repository
 import (
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stretchr/testify/suite"
 	"market4/internal/model"
 	"testing"
+
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stretchr/testify/suite"
 )
 
 type PricesTestSuite struct {
 	suite.Suite
 	testRepo  priceRepo
 	productID string
+	Data      TestData
 }
 
 func Test_PricesSuite(t *testing.T) {
 	suite.Run(t, new(PricesTestSuite))
 }
 
-func (suite *PricesTestSuite) SetupTest() {
+func (s *PricesTestSuite) SetupTest() {
 	fmt.Println("start setup")
 	var err error
-	suite.testRepo.pool, err = pgxpool.Connect(context.Background(), testDSN)
+	s.testRepo.pool, err = pgxpool.Connect(context.Background(), testDSN)
 	if err != nil {
-		suite.Error(err)
-		suite.Fail("setup failed")
+		s.Error(err)
+		s.Fail("setup failed")
 		return
 	}
-
-	createExtensionReq := "CREATE EXTENSION pgcrypto;"
-	_, err = suite.testRepo.pool.Exec(context.Background(), createExtensionReq)
+	s.Data, err = loadTestDataFromYaml("prices_test.yaml")
 	if err != nil {
-		suite.Fail("setup failed: createExtensionReq", err)
+		s.Error(err)
+		s.Fail("setup failed")
 		return
 	}
-
-	createTableProductsReq := "CREATE " +
-		"TABLE products ( " +
-		"id          UUID DEFAULT gen_random_uuid() PRIMARY KEY, " +
-		"sku         TEXT NOT NULL, " +
-		"name        TEXT NOT NULL, " +
-		"uri         TEXT NOT NULL, " +
-		"description TEXT NOT NULL, " +
-		"is_active       BOOL NOT NULL, " +
-		"created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
-		"updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);"
-	_, err = suite.testRepo.pool.Exec(context.Background(), createTableProductsReq)
+	for i, r := range s.Data.Conf.Setup.Requests {
+		_, err = s.testRepo.pool.Exec(context.Background(), r.Request)
+		if err != nil {
+			s.Error(err)
+			return
+		}
+		if i == 1 {
+			break
+		}
+	}
+	err = s.testRepo.pool.QueryRow(context.Background(), s.Data.Conf.Setup.Requests[2].Request).Scan(&s.productID)
 	if err != nil {
-		suite.Error(err)
-		suite.Fail("setup failed: createTableProductsReq")
+		s.Error(err)
 		return
 	}
-
-	createTablePricesReq := "CREATE " +
-		"TABLE prices ( " +
-		"id BIGSERIAL PRIMARY KEY, " +
-		"sale_price      INTEGER NOT NULL, " +
-		"factory_price   INTEGER NOT NULL, " +
-		"discount_price  INTEGER NOT NULL, " +
-		"product_id      UUID REFERENCES products, " +
-		"is_active       BOOL NOT NULL, " +
-		"created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
-		"updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);"
-	_, err = suite.testRepo.pool.Exec(context.Background(), createTablePricesReq)
+	addPriceReq := fmt.Sprintf(s.Data.Conf.Setup.Requests[3].Request, s.productID)
+	_, err = s.testRepo.pool.Exec(context.Background(), addPriceReq)
 	if err != nil {
-		suite.Error(err)
-		suite.Fail("setup failed: createTablePricesReq")
-		return
-	}
-
-	addProductReq := "INSERT " +
-		"INTO products (sku, name, uri, description, is_active) " +
-		"VALUES ('3001', 'пушка', '/product/тепловая-3001', 'пушка детская', true) RETURNING id;"
-
-	err = suite.testRepo.pool.QueryRow(context.Background(), addProductReq).Scan(&suite.productID)
-	if err != nil {
-		suite.Fail("setup failed: addProductReq", err)
-		return
-	}
-	addPriceReq := fmt.Sprintf(`
-	INSERT 
-	INTO prices (sale_price, factory_price, discount_price, product_id, is_active)
-	VALUES (2000, 1000, 1600, %s, true);
-	`, suite.productID)
-	_, err = suite.testRepo.pool.Exec(context.Background(), addPriceReq)
-	if err != nil {
-		suite.Error(err)
-		suite.Fail("setup failed: addPriceReq ")
+		s.Error(err)
+		s.Fail("setup failed: addPriceReq ")
 		return
 	}
 }
 
-func (suite *PricesTestSuite) TearDownTest() {
+func (s *PricesTestSuite) TearDownTest() {
 	fmt.Println("cleaning up")
 	var err error
-	_, err = suite.testRepo.pool.Exec(context.Background(), "DROP TABLE prices, products CASCADE;")
-	if err != nil {
-		suite.Error(err)
-		suite.Fail("cleaning failed")
+	for _, r := range s.Data.Conf.Teardown.Requests {
+		_, err = s.testRepo.pool.Exec(context.Background(), r.Request)
+		if err != nil {
+			s.Error(err)
+			s.Fail("cleaning failed")
+		}
 	}
 }
 
-func (suite *PricesTestSuite) Test_priceRepo_AddPrice() {
+func (s *PricesTestSuite) Test_priceRepo_AddPrice() {
 	type args struct {
 		ctx context.Context
 		p   *model.Price
@@ -122,7 +92,7 @@ func (suite *PricesTestSuite) Test_priceRepo_AddPrice() {
 					FactoryPrice:  5000,
 					DiscountPrice: 7000,
 					IsActive:      true,
-					ProductID:     suite.productID,
+					ProductID:     s.productID,
 				},
 			},
 			want: model.Price{
@@ -148,23 +118,24 @@ func (suite *PricesTestSuite) Test_priceRepo_AddPrice() {
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
-		suite.Run(tt.name, func() {
-			got, err := suite.testRepo.AddPrice(tt.args.ctx, tt.args.p)
+	for i := range tests {
+		tt := tests[i]
+		s.Run(tt.name, func() {
+			got, err := s.testRepo.AddPrice(tt.args.ctx, tt.args.p)
 			if (err != nil) != tt.wantErr {
 				fmt.Printf("AddPrice() error = %v, wantErr %v", err, tt.wantErr)
-				suite.Fail("AddPrice test failed", err)
+				s.Fail("AddPrice test failed", err)
 				return
 			}
-			if !suite.Equal(tt.want, got) {
+			if !s.Equal(tt.want, got) {
 				fmt.Printf("AddPrice() got = %v, want %v", got, tt.want)
-				suite.Fail("AddPrice test failed")
+				s.Fail("AddPrice test failed")
 			}
 		})
 	}
 }
 
-func (suite *PricesTestSuite) Test_priceRepo_EditPrice() {
+func (s *PricesTestSuite) Test_priceRepo_EditPrice() {
 	type args struct {
 		ctx context.Context
 		p   *model.Price
@@ -193,7 +164,7 @@ func (suite *PricesTestSuite) Test_priceRepo_EditPrice() {
 				FactoryPrice:  0,
 				DiscountPrice: 0,
 				IsActive:      false,
-				ProductID:     suite.productID,
+				ProductID:     s.productID,
 			},
 			wantErr: false,
 		},
@@ -212,26 +183,27 @@ func (suite *PricesTestSuite) Test_priceRepo_EditPrice() {
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
-		suite.Run(tt.name, func() {
-			got, err := suite.testRepo.EditPrice(tt.args.ctx, tt.args.p)
+	for i := range tests {
+		tt := tests[i]
+		s.Run(tt.name, func() {
+			got, err := s.testRepo.EditPrice(tt.args.ctx, tt.args.p)
 			if err != nil {
 				if tt.wantErr == true {
 					return
 				}
 				fmt.Printf("EditPrice() error = %v, wantErr %v", err, tt.wantErr)
-				suite.Fail("test EditPrice failed", err)
+				s.Fail("test EditPrice failed", err)
 				return
 			}
-			if !suite.Equal(tt.want, got) {
+			if !s.Equal(tt.want, got) {
 				fmt.Printf("EditPrice() got = %v, want %v", got, tt.want)
-				suite.Fail("test EditPrice failed")
+				s.Fail("test EditPrice failed")
 			}
 		})
 	}
 }
 
-func (suite *PricesTestSuite) Test_priceRepo_EditPriceByProductID() {
+func (s *PricesTestSuite) Test_priceRepo_EditPriceByProductID() {
 	type args struct {
 		ctx context.Context
 		p   *model.Price
@@ -252,7 +224,7 @@ func (suite *PricesTestSuite) Test_priceRepo_EditPriceByProductID() {
 					FactoryPrice:  500,
 					DiscountPrice: 900,
 					IsActive:      true,
-					ProductID:     suite.productID,
+					ProductID:     s.productID,
 				},
 			},
 			want: model.Price{
@@ -261,7 +233,7 @@ func (suite *PricesTestSuite) Test_priceRepo_EditPriceByProductID() {
 				FactoryPrice:  500,
 				DiscountPrice: 900,
 				IsActive:      true,
-				ProductID:     suite.productID,
+				ProductID:     s.productID,
 			},
 			wantErr: false,
 		},
@@ -281,26 +253,27 @@ func (suite *PricesTestSuite) Test_priceRepo_EditPriceByProductID() {
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
-		suite.Run(tt.name, func() {
-			got, err := suite.testRepo.EditPriceByProductID(tt.args.ctx, tt.args.p)
+	for i := range tests {
+		tt := tests[i]
+		s.Run(tt.name, func() {
+			got, err := s.testRepo.EditPriceByProductID(tt.args.ctx, tt.args.p)
 			if err != nil {
 				if tt.wantErr == true {
 					return
 				}
 				fmt.Printf("EditPriceByProductID() error = %v, wantErr %v", err, tt.wantErr)
-				suite.Fail("test EditPriceByProductID failed", err)
+				s.Fail("test EditPriceByProductID failed", err)
 				return
 			}
-			if !suite.Equal(tt.want, got) {
+			if !s.Equal(tt.want, got) {
 				fmt.Printf("EditPriceByProductID() got = %v, want %v", got, tt.want)
-				suite.Fail("test EditPriceByProductID failed")
+				s.Fail("test EditPriceByProductID failed")
 			}
 		})
 	}
 }
 
-func (suite *PricesTestSuite) Test_priceRepo_ListAllPrices() {
+func (s *PricesTestSuite) Test_priceRepo_ListAllPrices() {
 	type args struct {
 		ctx context.Context
 	}
@@ -321,31 +294,32 @@ func (suite *PricesTestSuite) Test_priceRepo_ListAllPrices() {
 					FactoryPrice:  1000,
 					DiscountPrice: 1600,
 					IsActive:      true,
-					ProductID:     suite.productID},
+					ProductID:     s.productID},
 			},
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
-		suite.Run(tt.name, func() {
-			got, err := suite.testRepo.ListAllPrices(tt.args.ctx)
+	for i := range tests {
+		tt := tests[i]
+		s.Run(tt.name, func() {
+			got, err := s.testRepo.ListAllPrices(tt.args.ctx)
 			if err != nil {
 				if tt.wantErr == true {
 					return
 				}
 				fmt.Printf("ListAllPrices() error = %v, wantErr %v", err, tt.wantErr)
-				suite.Fail("test ListAllPrices failed", err)
+				s.Fail("test ListAllPrices failed", err)
 				return
 			}
-			if !suite.Equal(tt.want, got) {
+			if !s.Equal(tt.want, got) {
 				fmt.Printf("ListAllPrices() got = %v, want %v", got, tt.want)
-				suite.Fail("test ListAllPrices failed")
+				s.Fail("test ListAllPrices failed")
 			}
 		})
 	}
 }
 
-func (suite *PricesTestSuite) Test_priceRepo_SearchPriceByProductID() {
+func (s *PricesTestSuite) Test_priceRepo_SearchPriceByProductID() {
 	type args struct {
 		ctx       context.Context
 		productID string
@@ -360,7 +334,7 @@ func (suite *PricesTestSuite) Test_priceRepo_SearchPriceByProductID() {
 			name: "search existing price",
 			args: args{
 				ctx:       context.Background(),
-				productID: suite.productID,
+				productID: s.productID,
 			},
 			want: model.Price{
 				ID:            1,
@@ -368,7 +342,7 @@ func (suite *PricesTestSuite) Test_priceRepo_SearchPriceByProductID() {
 				FactoryPrice:  1000,
 				DiscountPrice: 1600,
 				IsActive:      true,
-				ProductID:     suite.productID,
+				ProductID:     s.productID,
 			},
 			wantErr: false,
 		},
@@ -384,20 +358,21 @@ func (suite *PricesTestSuite) Test_priceRepo_SearchPriceByProductID() {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
-		suite.Run(tt.name, func() {
-			got, err := suite.testRepo.SearchPriceByProductID(tt.args.ctx, tt.args.productID)
+	for i := range tests {
+		tt := tests[i]
+		s.Run(tt.name, func() {
+			got, err := s.testRepo.SearchPriceByProductID(tt.args.ctx, tt.args.productID)
 			if err != nil {
 				if tt.wantErr == true {
 					return
 				}
 				fmt.Printf("SearchPriceByProductID() error = %v, wantErr %v", err, tt.wantErr)
-				suite.Fail("test SearchPriceByProductID failed", err)
+				s.Fail("test SearchPriceByProductID failed", err)
 				return
 			}
-			if !suite.Equal(got, tt.want) {
+			if !s.Equal(got, tt.want) {
 				fmt.Printf("SearchPriceByProductID() got = %v, want %v", got, tt.want)
-				suite.Fail("test SearchPriceByProductID failed")
+				s.Fail("test SearchPriceByProductID failed")
 			}
 		})
 	}

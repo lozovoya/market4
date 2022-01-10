@@ -3,9 +3,10 @@ package repository
 import (
 	"context"
 	"fmt"
+	"market4/internal/model"
+
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"market4/internal/model"
 )
 
 type priceRepo struct {

@@ -2,12 +2,13 @@ package v1
 
 import (
 	"encoding/json"
-	"github.com/unrolled/render"
-	"go.uber.org/zap"
 	"market4/internal/api/auth"
 	"market4/internal/model"
 	"market4/internal/repository"
 	"net/http"
+
+	"github.com/unrolled/render"
+	"go.uber.org/zap"
 )
 
 type Token struct {
@@ -43,8 +44,9 @@ func (a *Auth) Token(writer http.ResponseWriter, request *http.Request) {
 		}
 		return
 	}
-	if IsEmpty(data.Login) || IsEmpty(data.Password) {
-		a.lg.Error("Token: field is empty")
+	err = checkMandatoryFields(data.Login, data.Password)
+	if err != nil {
+		a.lg.Error("Token or password field is empty")
 		err = a.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "Bad request"})
 		if err != nil {
 			a.lg.Error("Auth", zap.Error(err))

@@ -3,11 +3,12 @@ package repository
 import (
 	"context"
 	"fmt"
+	"log"
+	"market4/internal/model"
+
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"golang.org/x/crypto/bcrypt"
-	"log"
-	"market4/internal/model"
 )
 
 type usersRepo struct {

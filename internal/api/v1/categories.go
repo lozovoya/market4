@@ -2,12 +2,13 @@ package v1
 
 import (
 	"encoding/json"
-	"github.com/unrolled/render"
-	"go.uber.org/zap"
 	"market4/internal/model"
 	"market4/internal/repository"
 	"market4/internal/views"
 	"net/http"
+
+	"github.com/unrolled/render"
+	"go.uber.org/zap"
 )
 
 type Category struct {
@@ -63,8 +64,8 @@ func (c *Category) AddCategory(writer http.ResponseWriter, request *http.Request
 		}
 		return
 	}
-
-	if IsEmpty(data.Name) {
+	err = checkMandatoryFields(data.Name)
+	if err != nil {
 		c.lg.Error("field is empty")
 		err = c.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
 		if err != nil {
@@ -118,8 +119,8 @@ func (c *Category) EditCategory(writer http.ResponseWriter, request *http.Reques
 		}
 		return
 	}
-
-	if IsEmpty(data.Name) {
+	err = checkMandatoryFields(data.Name)
+	if err != nil {
 		c.lg.Error("field is empty")
 		err = c.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
 		if err != nil {

@@ -3,155 +3,86 @@ package repository
 import (
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stretchr/testify/suite"
 	"market4/internal/model"
 	"testing"
+
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stretchr/testify/suite"
 )
 
 type ProductTestSuite struct {
 	suite.Suite
 	testRepo  productRepo
 	productID string
+	Data      TestData
 }
 
 func Test_ProductSuite(t *testing.T) {
 	suite.Run(t, new(ProductTestSuite))
 }
 
-func (suite *ProductTestSuite) SetupTest() {
+func (s *ProductTestSuite) SetupTest() {
 	fmt.Println("start setup")
 	var err error
 
-	suite.testRepo.pool, err = pgxpool.Connect(context.Background(), testDSN)
+	s.testRepo.pool, err = pgxpool.Connect(context.Background(), testDSN)
 	if err != nil {
-		suite.Fail("setup failed", err)
+		s.Fail("setup failed", err)
 		return
 	}
-
+	s.Data, err = loadTestDataFromYaml("products_test.yaml")
+	if err != nil {
+		s.Error(err)
+		s.Fail("setup failed")
+		return
+	}
 	createExtensionReq := "CREATE EXTENSION pgcrypto;"
-	_, err = suite.testRepo.pool.Exec(context.Background(), createExtensionReq)
+	_, err = s.testRepo.pool.Exec(context.Background(), createExtensionReq)
 	if err != nil {
 		fmt.Println("pgcrypto failed: createExtensionReq", err)
 	}
-	createTableProductsReq := "CREATE " +
-		"TABLE products ( " +
-		"id          UUID DEFAULT gen_random_uuid() PRIMARY KEY, " +
-		"sku         TEXT NOT NULL, " +
-		"name        TEXT NOT NULL, " +
-		"uri         TEXT NOT NULL, " +
-		"description TEXT NOT NULL, " +
-		"is_active       BOOL NOT NULL, " +
-		"created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
-		"updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);"
-	_, err = suite.testRepo.pool.Exec(context.Background(), createTableProductsReq)
+	for i, r := range s.Data.Conf.Setup.Requests {
+		_, err = s.testRepo.pool.Exec(context.Background(), r.Request)
+		if err != nil {
+			s.Error(err)
+			return
+		}
+		if i == 6 {
+			break
+		}
+	}
+	err = s.testRepo.pool.QueryRow(context.Background(), s.Data.Conf.Setup.Requests[7].Request).Scan(&s.productID)
 	if err != nil {
-		suite.Fail("setup failed: createTableProductsReq", err)
+		s.Fail("setup failed: addProductReq", err)
 		return
 	}
-
-	addProductReq := "INSERT " +
-		"INTO products (sku, name, uri, description, is_active) " +
-		"VALUES ('3001', 'пушка', '/product/тепловая-3001', 'пушка детская', true) RETURNING id;"
-	err = suite.testRepo.pool.QueryRow(context.Background(), addProductReq).Scan(&suite.productID)
+	addProductCategoryReq := fmt.Sprintf(s.Data.Conf.Setup.Requests[8].Request, s.productID)
+	_, err = s.testRepo.pool.Exec(context.Background(), addProductCategoryReq)
 	if err != nil {
-		suite.Fail("setup failed: addProductReq", err)
+		s.Fail("setup failed", err)
 		return
 	}
-	createTableCategoriesReq := "CREATE " +
-		"TABLE categories ( " +
-		"id BIGSERIAL PRIMARY KEY, " +
-		"name TEXT NOT NULL UNIQUE, " +
-		"uri_name TEXT UNIQUE, " +
-		"created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
-		"updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);"
-	_, err = suite.testRepo.pool.Exec(context.Background(), createTableCategoriesReq)
+	addProductShopReq := fmt.Sprintf(s.Data.Conf.Setup.Requests[9].Request, s.productID)
+	_, err = s.testRepo.pool.Exec(context.Background(), addProductShopReq)
 	if err != nil {
-		suite.Fail("setup failed", err)
-		return
-	}
-
-	addCategoriesReq := "INSERT " +
-		"INTO categories (name, uri_name) " +
-		"VALUES ('Стройматериалы', 'Стройматериалы-1'), " +
-		"('Игрушки', 'Игрушки-2');"
-
-	_, err = suite.testRepo.pool.Exec(context.Background(), addCategoriesReq)
-	if err != nil {
-		suite.Fail("setup failed", err)
-		return
-	}
-	createTableProductCategoryReq := "CREATE " +
-		"TABLE productcategory ( " +
-		"category_id  BIGINT NOT NULL REFERENCES categories, " +
-		"product_id UUID NOT NULL REFERENCES products, " +
-		"PRIMARY KEY (category_id, product_id));"
-	_, err = suite.testRepo.pool.Exec(context.Background(), createTableProductCategoryReq)
-	if err != nil {
-		suite.Fail("setup failed", err)
-		return
-	}
-	addProductCategoryReq := fmt.Sprintf("INSERT INTO productcategory (category_id, product_id) VALUES (1, '%s');", suite.productID)
-	_, err = suite.testRepo.pool.Exec(context.Background(), addProductCategoryReq)
-	if err != nil {
-		suite.Fail("setup failed", err)
-		return
-	}
-	createTableShopsReq := "CREATE " +
-		"TABLE shops ( " +
-		"id              BIGSERIAL PRIMARY KEY, " +
-		"name            TEXT NOT NULL, " +
-		"address         TEXT NOT NULL, " +
-		"lon             TEXT, " +
-		"lat             TEXT, " +
-		"working_hours   TEXT, " +
-		"created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
-		"updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);"
-	_, err = suite.testRepo.pool.Exec(context.Background(), createTableShopsReq)
-	if err != nil {
-		suite.Fail("setup failed", err)
-		return
-	}
-	addShopReq := "INSERT " +
-		"INTO shops (name, address, lon, lat, working_hours) " +
-		"VALUES ('Магазин на диване', 'Москва, Останкино', '324234' , '5465476', '8 - 20'), " +
-		"('Магазин для взрослых', 'Ростов, кремль', '12334' , '5465476', '8 - 20');"
-	_, err = suite.testRepo.pool.Exec(context.Background(), addShopReq)
-	if err != nil {
-		suite.Fail("setup failed", err)
-		return
-	}
-
-	createTableProductShopReq := "CREATE " +
-		"TABLE productshop ( " +
-		"shop_id BIGINT NOT NULL REFERENCES shops, " +
-		"product_id UUID NOT NULL REFERENCES products, " +
-		"PRIMARY KEY (shop_id, product_id));"
-	_, err = suite.testRepo.pool.Exec(context.Background(), createTableProductShopReq)
-	if err != nil {
-		suite.Fail("setup failed", err)
-		return
-	}
-	addProductShopReq := fmt.Sprintf("INSERT INTO productshop (shop_id, product_id) VALUES (1, '%s');", suite.productID)
-	_, err = suite.testRepo.pool.Exec(context.Background(), addProductShopReq)
-	if err != nil {
-		suite.Fail("setup failed", err)
+		s.Fail("setup failed", err)
 		return
 	}
 }
 
-func (suite *ProductTestSuite) TearDownTest() {
+func (s *ProductTestSuite) TearDownTest() {
 	fmt.Println("cleaning up")
 	var err error
-	_, err = suite.testRepo.pool.Exec(context.Background(),
-		"DROP TABLE products, categories, shops, productshop, productcategory CASCADE;")
-	if err != nil {
-		suite.Error(err)
-		suite.Fail("cleaning failed")
+	for _, r := range s.Data.Conf.Teardown.Requests {
+		_, err = s.testRepo.pool.Exec(context.Background(), r.Request)
+		if err != nil {
+			s.Error(err)
+			s.Fail("cleaning failed")
+		}
 	}
 }
 
-func (suite *ProductTestSuite) Test_productRepo_IfProductExists() {
+func (s *ProductTestSuite) Test_productRepo_IfProductExists() {
 	type args struct {
 		ctx       context.Context
 		productID string
@@ -165,7 +96,7 @@ func (suite *ProductTestSuite) Test_productRepo_IfProductExists() {
 			name: "check existing product",
 			args: args{
 				ctx:       context.Background(),
-				productID: suite.productID,
+				productID: s.productID,
 			},
 			want: true,
 		},
@@ -178,17 +109,18 @@ func (suite *ProductTestSuite) Test_productRepo_IfProductExists() {
 			want: false,
 		},
 	}
-	for _, tt := range tests {
-		suite.Run(tt.name, func() {
-			if got := suite.testRepo.IfProductExists(tt.args.ctx, tt.args.productID); got != tt.want {
+	for i := range tests {
+		tt := tests[i]
+		s.Run(tt.name, func() {
+			if got := s.testRepo.IfProductExists(tt.args.ctx, tt.args.productID); got != tt.want {
 				fmt.Printf("IfProductExists() = %v, want %v", got, tt.want)
-				suite.Fail("test IfProductExists failed")
+				s.Fail("test IfProductExists failed")
 			}
 		})
 	}
 }
 
-func (suite *ProductTestSuite) Test_productRepo_setProductCategory() {
+func (s *ProductTestSuite) Test_productRepo_setProductCategory() {
 	type args struct {
 		ctx        context.Context
 		categoryId int
@@ -204,7 +136,7 @@ func (suite *ProductTestSuite) Test_productRepo_setProductCategory() {
 			args: args{
 				ctx:        context.Background(),
 				categoryId: 2,
-				productId:  suite.productID,
+				productId:  s.productID,
 			},
 			wantErr: false,
 		},
@@ -213,26 +145,27 @@ func (suite *ProductTestSuite) Test_productRepo_setProductCategory() {
 			args: args{
 				ctx:        context.Background(),
 				categoryId: 20,
-				productId:  suite.productID,
+				productId:  s.productID,
 			},
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
-		suite.Run(tt.name, func() {
-			err := suite.testRepo.setProductCategory(tt.args.ctx, tt.args.categoryId, tt.args.productId)
+	for i := range tests {
+		tt := tests[i]
+		s.Run(tt.name, func() {
+			err := s.testRepo.setProductCategory(tt.args.ctx, tt.args.categoryId, tt.args.productId)
 			if err != nil {
 				if tt.wantErr == true {
 					return
 				}
 				fmt.Printf("setProductCategory() error = %v, wantErr %v", err, tt.wantErr)
-				suite.Fail("test setProductCategory failed")
+				s.Fail("test setProductCategory failed")
 			}
 		})
 	}
 }
 
-func (suite *ProductTestSuite) Test_productRepo_setProductShop() {
+func (s *ProductTestSuite) Test_productRepo_setProductShop() {
 	type args struct {
 		ctx       context.Context
 		shopID    int
@@ -248,7 +181,7 @@ func (suite *ProductTestSuite) Test_productRepo_setProductShop() {
 			args: args{
 				ctx:       context.Background(),
 				shopID:    2,
-				productID: suite.productID,
+				productID: s.productID,
 			},
 			wantErr: false,
 		},
@@ -257,26 +190,27 @@ func (suite *ProductTestSuite) Test_productRepo_setProductShop() {
 			args: args{
 				ctx:       context.Background(),
 				shopID:    10,
-				productID: suite.productID,
+				productID: s.productID,
 			},
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
-		suite.Run(tt.name, func() {
-			err := suite.testRepo.setProductShop(tt.args.ctx, tt.args.shopID, tt.args.productID)
+	for i := range tests {
+		tt := tests[i]
+		s.Run(tt.name, func() {
+			err := s.testRepo.setProductShop(tt.args.ctx, tt.args.shopID, tt.args.productID)
 			if err != nil {
 				if tt.wantErr == true {
 					return
 				}
 				fmt.Printf("setProductShop() error = %v, wantErr %v", err, tt.wantErr)
-				suite.Fail("test setProductShop failed")
+				s.Fail("test setProductShop failed")
 			}
 		})
 	}
 }
 
-func (suite *ProductTestSuite) Test_productRepo_EditProduct() {
+func (s *ProductTestSuite) Test_productRepo_EditProduct() {
 	type args struct {
 		ctx        context.Context
 		product    model.Product
@@ -300,7 +234,7 @@ func (suite *ProductTestSuite) Test_productRepo_EditProduct() {
 				},
 			},
 			want: model.Product{
-				ID:   suite.productID,
+				ID:   s.productID,
 				SKU:  "3001",
 				Name: "клюшка",
 				//Type:        "",
@@ -323,26 +257,27 @@ func (suite *ProductTestSuite) Test_productRepo_EditProduct() {
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
-		suite.Run(tt.name, func() {
-			got, err := suite.testRepo.EditProduct(tt.args.ctx, tt.args.product, tt.args.shopID, tt.args.categoryID)
+	for i := range tests {
+		tt := tests[i]
+		s.Run(tt.name, func() {
+			got, err := s.testRepo.EditProduct(tt.args.ctx, tt.args.product, tt.args.shopID, tt.args.categoryID)
 			if err != nil {
 				if tt.wantErr == true {
 					return
 				}
 				fmt.Printf("EditProduct() error = %v, wantErr %v", err, tt.wantErr)
-				suite.Fail("test EditProduct failed")
+				s.Fail("test EditProduct failed")
 				return
 			}
-			if !suite.Equal(tt.want, got) {
+			if !s.Equal(tt.want, got) {
 				fmt.Printf("EditProduct() got = %v, want %v", got, tt.want)
-				suite.Fail("test EditProduct failed")
+				s.Fail("test EditProduct failed")
 			}
 		})
 	}
 }
 
-func (suite *ProductTestSuite) Test_productRepo_ListAllProducts() {
+func (s *ProductTestSuite) Test_productRepo_ListAllProducts() {
 	type args struct {
 		ctx context.Context
 	}
@@ -359,7 +294,7 @@ func (suite *ProductTestSuite) Test_productRepo_ListAllProducts() {
 			},
 			want: []model.Product{
 				{
-					ID:          suite.productID,
+					ID:          s.productID,
 					SKU:         "3001",
 					Name:        "пушка",
 					Type:        "",
@@ -371,26 +306,27 @@ func (suite *ProductTestSuite) Test_productRepo_ListAllProducts() {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
-		suite.Run(tt.name, func() {
-			got, err := suite.testRepo.ListAllProducts(tt.args.ctx)
+	for i := range tests {
+		tt := tests[i]
+		s.Run(tt.name, func() {
+			got, err := s.testRepo.ListAllProducts(tt.args.ctx)
 			if err != nil {
 				if tt.wantErr == true {
 					return
 				}
 				fmt.Printf("ListAllProducts() error = %v, wantErr %v", err, tt.wantErr)
-				suite.Fail("test ListAllProducts failed")
+				s.Fail("test ListAllProducts failed")
 				return
 			}
-			if !suite.Equal(tt.want, got) {
+			if !s.Equal(tt.want, got) {
 				fmt.Printf("ListAllProducts() got = %v, want %v", got, tt.want)
-				suite.Fail("test ListAllProducts failed")
+				s.Fail("test ListAllProducts failed")
 			}
 		})
 	}
 }
 
-func (suite *ProductTestSuite) Test_productRepo_SearchProductsByCategory() {
+func (s *ProductTestSuite) Test_productRepo_SearchProductsByCategory() {
 	type args struct {
 		ctx      context.Context
 		category int
@@ -409,7 +345,7 @@ func (suite *ProductTestSuite) Test_productRepo_SearchProductsByCategory() {
 			},
 			want: []model.Product{
 				{
-					ID:          suite.productID,
+					ID:          s.productID,
 					SKU:         "",
 					Name:        "пушка",
 					Type:        "",
@@ -430,26 +366,27 @@ func (suite *ProductTestSuite) Test_productRepo_SearchProductsByCategory() {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
-		suite.Run(tt.name, func() {
-			got, err := suite.testRepo.SearchProductsByCategory(tt.args.ctx, tt.args.category)
+	for i := range tests {
+		tt := tests[i]
+		s.Run(tt.name, func() {
+			got, err := s.testRepo.SearchProductsByCategory(tt.args.ctx, tt.args.category)
 			if err != nil {
 				if tt.wantErr == true {
 					return
 				}
 				fmt.Printf("SearchProductsByCategory() error = %v, wantErr %v", err, tt.wantErr)
-				suite.Fail("test SearchProductsByCategory failed")
+				s.Fail("test SearchProductsByCategory failed")
 				return
 			}
-			if !suite.Equal(tt.want, got) {
+			if !s.Equal(tt.want, got) {
 				fmt.Printf("SearchProductsByCategory() got = %v, want %v", got, tt.want)
-				suite.Fail("test SearchProductsByCategory failed")
+				s.Fail("test SearchProductsByCategory failed")
 			}
 		})
 	}
 }
 
-func (suite *ProductTestSuite) Test_productRepo_SearchProductsByName() {
+func (s *ProductTestSuite) Test_productRepo_SearchProductsByName() {
 	type args struct {
 		ctx         context.Context
 		productName string
@@ -467,7 +404,7 @@ func (suite *ProductTestSuite) Test_productRepo_SearchProductsByName() {
 				productName: "пушка",
 			},
 			want: model.Product{
-				ID:          suite.productID,
+				ID:          s.productID,
 				SKU:         "3001",
 				Name:        "пушка",
 				Type:        "",
@@ -495,26 +432,27 @@ func (suite *ProductTestSuite) Test_productRepo_SearchProductsByName() {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
-		suite.Run(tt.name, func() {
-			got, err := suite.testRepo.SearchProductsByName(tt.args.ctx, tt.args.productName)
+	for i := range tests {
+		tt := tests[i]
+		s.Run(tt.name, func() {
+			got, err := s.testRepo.SearchProductsByName(tt.args.ctx, tt.args.productName)
 			if err != nil {
 				if tt.wantErr == true {
 					return
 				}
 				fmt.Printf("SearchProductsByName() error = %v, wantErr %v", err, tt.wantErr)
-				suite.Fail("test SearchProductsByName failed")
+				s.Fail("test SearchProductsByName failed")
 				return
 			}
-			if !suite.Equal(tt.want, got) {
+			if !s.Equal(tt.want, got) {
 				fmt.Printf("SearchProductsByName() got = %v, want %v", got, tt.want)
-				suite.Fail("test SearchProductsByName failed")
+				s.Fail("test SearchProductsByName failed")
 			}
 		})
 	}
 }
 
-func (suite *ProductTestSuite) Test_productRepo_SearchProductsByShop() {
+func (s *ProductTestSuite) Test_productRepo_SearchProductsByShop() {
 	type args struct {
 		ctx    context.Context
 		shopID int
@@ -533,7 +471,7 @@ func (suite *ProductTestSuite) Test_productRepo_SearchProductsByShop() {
 			},
 			want: []model.Product{
 				{
-					ID:          suite.productID,
+					ID:          s.productID,
 					SKU:         "3001",
 					Name:        "пушка",
 					Type:        "",
@@ -554,20 +492,21 @@ func (suite *ProductTestSuite) Test_productRepo_SearchProductsByShop() {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
-		suite.Run(tt.name, func() {
-			got, err := suite.testRepo.SearchProductsByShop(tt.args.ctx, tt.args.shopID)
+	for i := range tests {
+		tt := tests[i]
+		s.Run(tt.name, func() {
+			got, err := s.testRepo.SearchProductsByShop(tt.args.ctx, tt.args.shopID)
 			if err != nil {
 				if tt.wantErr == true {
 					return
 				}
 				fmt.Printf("SearchProductsByShop() error = %v, wantErr %v", err, tt.wantErr)
-				suite.Fail("test SearchProductsByShop failed")
+				s.Fail("test SearchProductsByShop failed")
 				return
 			}
-			if !suite.Equal(tt.want, got) {
+			if !s.Equal(tt.want, got) {
 				fmt.Printf("SearchProductsByShop() got = %v, want %v", got, tt.want)
-				suite.Fail("test SearchProductsByShop failed")
+				s.Fail("test SearchProductsByShop failed")
 			}
 		})
 	}

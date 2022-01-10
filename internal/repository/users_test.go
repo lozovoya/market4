@@ -3,86 +3,61 @@ package repository
 import (
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stretchr/testify/suite"
 	"market4/internal/model"
 	"sync"
 	"testing"
+
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stretchr/testify/suite"
 )
 
 type UsersTestSuite struct {
 	suite.Suite
 	testRepo usersRepo
+	Data     TestData
 }
 
 const (
 	testDSN = "postgres://app:pass@localhost:5432/testdb"
 )
 
-func (suite *UsersTestSuite) SetupTest() {
+func (s *UsersTestSuite) SetupTest() {
 	fmt.Println("start setup")
 	var err error
-	suite.testRepo.pool, err = pgxpool.Connect(context.Background(), testDSN)
+	s.testRepo.pool, err = pgxpool.Connect(context.Background(), testDSN)
 	if err != nil {
-		suite.Error(err)
-		suite.Fail("setup failed")
+		s.Error(err)
+		s.Fail("setup failed")
 		return
 	}
-	createTableUsersReq := "CREATE " +
-		"TABLE users ( " +
-		"id BIGSERIAL PRIMARY KEY, " +
-		"login TEXT NOT NULL UNIQUE, " +
-		"password TEXT NOT NULL);"
-	_, err = suite.testRepo.pool.Exec(context.Background(), createTableUsersReq)
+	s.Data, err = loadTestDataFromYaml("users_test.yaml")
 	if err != nil {
-		suite.Error(err)
-		suite.Fail("setup failed")
+		s.Error(err)
+		s.Fail("setup failed")
 		return
 	}
-	createTableRolesReq := "CREATE " +
-		"TABLE roles ( " +
-		"id BIGSERIAL PRIMARY KEY, " +
-		"name TEXT NOT NULL UNIQUE);"
-	_, err = suite.testRepo.pool.Exec(context.Background(), createTableRolesReq)
-	if err != nil {
-		suite.Error(err)
-		suite.Fail("setup failed")
-		return
-	}
-	createTableUserRolesReq := "CREATE " +
-		"TABLE userroles ( " +
-		"user_id BIGINT NOT NULL REFERENCES users, " +
-		"role_id BIGINT NOT NULL REFERENCES roles, " +
-		"PRIMARY KEY (user_id, role_id));"
-
-	_, err = suite.testRepo.pool.Exec(context.Background(), createTableUserRolesReq)
-	if err != nil {
-		suite.Error(err)
-		suite.Fail("setup failed")
-		return
-	}
-	addRolesReq := "INSERT " +
-		"INTO roles (name) " +
-		"VALUES ('USER'), ('ADMIN');"
-
-	_, err = suite.testRepo.pool.Exec(context.Background(), addRolesReq)
-	if err != nil {
-		suite.Error(err)
-		suite.Fail("setup failed")
-		return
+	for _, r := range s.Data.Conf.Setup.Requests {
+		_, err = s.testRepo.pool.Exec(context.Background(), r.Request)
+		if err != nil {
+			s.Error(err)
+			return
+		}
 	}
 }
 
-func (suite *UsersTestSuite) TearDownTest() {
+func (s *UsersTestSuite) TearDownTest() {
 	fmt.Println("cleaning up")
 	var err error
-	_, err = suite.testRepo.pool.Exec(context.Background(), "DROP TABLE userroles, roles, users CASCADE;")
-	if err != nil {
-		suite.Error(err)
+	for _, r := range s.Data.Conf.Teardown.Requests {
+		_, err = s.testRepo.pool.Exec(context.Background(), r.Request)
+		if err != nil {
+			s.Error(err)
+			s.Fail("cleaning failed")
+		}
 	}
 }
 
-func (suite *UsersTestSuite) Test_AddUser() {
+func (s *UsersTestSuite) Test_AddUser() {
 	type args struct {
 		ctx  context.Context
 		user *model.User
@@ -138,31 +113,32 @@ func (suite *UsersTestSuite) Test_AddUser() {
 		},
 	}
 	wg := sync.WaitGroup{}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		wg.Add(1)
-		suite.Run(tt.name, func() {
-			got, err := suite.testRepo.AddUser(tt.args.ctx, tt.args.user)
+		s.Run(tt.name, func() {
+			got, err := s.testRepo.AddUser(tt.args.ctx, tt.args.user)
 			fmt.Printf("GOT: %v", got)
 			if (err != nil) && (tt.wantErr == true) {
 				fmt.Printf("AddUser() error = %v, wantErr %v", err, tt.wantErr)
 				wg.Done()
 				return
 			}
-			suite.Equal(tt.want, got)
+			s.Equal(tt.want, got)
 			wg.Done()
 		})
 	}
 	wg.Wait()
 }
 
-func (suite *UsersTestSuite) Test_EditUser() {
+func (s *UsersTestSuite) Test_EditUser() {
 	addTestUserReq := "INSERT " +
 		"INTO users (login, password) " +
 		"VALUES ('user1','$2a$10$5h6GDvR0EBtCECFgptg6iuiOu0jkc/qJ8if9jt39NY9ir602nOcXu');"
 	var err error
-	_, err = suite.testRepo.pool.Exec(context.Background(), addTestUserReq)
+	_, err = s.testRepo.pool.Exec(context.Background(), addTestUserReq)
 	if err != nil {
-		suite.Error(err)
+		s.Error(err)
 		return
 	}
 	type args struct {
@@ -203,20 +179,21 @@ func (suite *UsersTestSuite) Test_EditUser() {
 		},
 	}
 	wg := sync.WaitGroup{}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		wg.Add(1)
-		suite.Run(tt.name, func() {
-			got, err := suite.testRepo.EditUser(tt.args.ctx, tt.args.user)
+		s.Run(tt.name, func() {
+			got, err := s.testRepo.EditUser(tt.args.ctx, tt.args.user)
 			fmt.Printf("GOT %v: ", got)
 			if (err != nil) && (tt.wantErr == true) {
 				fmt.Printf("EditUser() error = %v, wantErr %v", err, tt.wantErr)
 				if err != nil {
-					suite.Error(err)
+					s.Error(err)
 				}
 				wg.Done()
 				return
 			}
-			if suite.Equal(tt.want, got) {
+			if s.Equal(tt.want, got) {
 				fmt.Printf("EditUser() got = %v, want %v", got, tt.want)
 			}
 			wg.Done()
@@ -225,22 +202,22 @@ func (suite *UsersTestSuite) Test_EditUser() {
 	wg.Wait()
 }
 
-func (suite *UsersTestSuite) Test_GetUserRolesByID() {
+func (s *UsersTestSuite) Test_GetUserRolesByID() {
 	addTestUserReq := "INSERT " +
 		"INTO users (login, password) " +
 		"VALUES ('user1','$2a$10$5h6GDvR0EBtCECFgptg6iuiOu0jkc/qJ8if9jt39NY9ir602nOcXu');"
 	var err error
-	_, err = suite.testRepo.pool.Exec(context.Background(), addTestUserReq)
+	_, err = s.testRepo.pool.Exec(context.Background(), addTestUserReq)
 	if err != nil {
-		suite.Error(err)
+		s.Error(err)
 		return
 	}
 	addUserRoleReq := "INSERT " +
 		"INTO userroles (user_id, role_id) " +
 		"VALUES (1, 2);"
-	_, err = suite.testRepo.pool.Exec(context.Background(), addUserRoleReq)
+	_, err = s.testRepo.pool.Exec(context.Background(), addUserRoleReq)
 	if err != nil {
-		suite.Error(err)
+		s.Error(err)
 		return
 	}
 	type args struct {
@@ -266,17 +243,18 @@ func (suite *UsersTestSuite) Test_GetUserRolesByID() {
 		},
 	}
 	wg := sync.WaitGroup{}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		wg.Add(1)
-		suite.Run(tt.name, func() {
-			got, err := suite.testRepo.GetUserRolesByID(tt.args.ctx, tt.args.user.ID)
+		s.Run(tt.name, func() {
+			got, err := s.testRepo.GetUserRolesByID(tt.args.ctx, tt.args.user.ID)
 			fmt.Printf("Got: %v", got)
 			if (err != nil) && (tt.wantErr == true) {
 				fmt.Printf("GetUserRolesByID() error = %v, wantErr %v", err, tt.wantErr)
 				wg.Done()
 				return
 			}
-			if suite.Equal(tt.want, got) {
+			if s.Equal(tt.want, got) {
 				fmt.Printf("GetUserRolesByID() got = %v, want %v", got, tt.want)
 			}
 			wg.Done()
@@ -289,14 +267,14 @@ func Test_MarketSuite(t *testing.T) {
 	suite.Run(t, new(UsersTestSuite))
 }
 
-func (suite *UsersTestSuite) Test_AddRole() {
+func (s *UsersTestSuite) Test_AddRole() {
 	addTestUserReq := "INSERT " +
 		"INTO users (login, password) " +
 		"VALUES ('user1','$2a$10$5h6GDvR0EBtCECFgptg6iuiOu0jkc/qJ8if9jt39NY9ir602nOcXu');"
 	var err error
-	_, err = suite.testRepo.pool.Exec(context.Background(), addTestUserReq)
+	_, err = s.testRepo.pool.Exec(context.Background(), addTestUserReq)
 	if err != nil {
-		suite.Error(err)
+		s.Error(err)
 		return
 	}
 	type args struct {
@@ -332,36 +310,37 @@ func (suite *UsersTestSuite) Test_AddRole() {
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
-		suite.Run(tt.name, func() {
-			err := suite.testRepo.AddRole(tt.args.ctx, tt.args.user.Login, tt.args.user.Role)
+	for i := range tests {
+		tt := tests[i]
+		s.Run(tt.name, func() {
+			err := s.testRepo.AddRole(tt.args.ctx, tt.args.user.Login, tt.args.user.Role)
 			if err != nil {
 				if tt.wantErr == true {
 					fmt.Printf("AddRole() error = %v, wantErr %v", err, tt.wantErr)
 					return
 				}
-				suite.Fail("test failed")
+				s.Fail("test failed")
 			}
 		})
 	}
 }
 
-func (suite *UsersTestSuite) Test_RemoveRole() {
+func (s *UsersTestSuite) Test_RemoveRole() {
 	addTestUserReq := "INSERT " +
 		"INTO users (login, password) " +
 		"VALUES ('user1','$2a$10$5h6GDvR0EBtCECFgptg6iuiOu0jkc/qJ8if9jt39NY9ir602nOcXu');"
 	var err error
-	_, err = suite.testRepo.pool.Exec(context.Background(), addTestUserReq)
+	_, err = s.testRepo.pool.Exec(context.Background(), addTestUserReq)
 	if err != nil {
-		suite.Fail("test RemoveRole failed", err)
+		s.Fail("test RemoveRole failed", err)
 		return
 	}
 	addUserRoleReq := "INSERT " +
 		"INTO userroles (user_id, role_id) " +
 		"VALUES (1, 2);"
-	_, err = suite.testRepo.pool.Exec(context.Background(), addUserRoleReq)
+	_, err = s.testRepo.pool.Exec(context.Background(), addUserRoleReq)
 	if err != nil {
-		suite.Fail("test RemoveRole failed", err)
+		s.Fail("test RemoveRole failed", err)
 		return
 	}
 	type args struct {
@@ -396,29 +375,30 @@ func (suite *UsersTestSuite) Test_RemoveRole() {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
-		suite.Run(tt.name, func() {
-			err := suite.testRepo.RemoveRole(tt.args.ctx, tt.args.user.Login, tt.args.user.Role)
+	for i := range tests {
+		tt := tests[i]
+		s.Run(tt.name, func() {
+			err := s.testRepo.RemoveRole(tt.args.ctx, tt.args.user.Login, tt.args.user.Role)
 			if err != nil {
 				if tt.wantErr == true {
 					return
 				}
 				fmt.Printf("RemoveRole() error = %v, wantErr %v", err, tt.wantErr)
-				suite.Fail("test RemoveRole failed")
+				s.Fail("test RemoveRole failed")
 				return
 			}
 		})
 	}
 }
 
-func (suite *UsersTestSuite) Test_CheckCreds() {
+func (s *UsersTestSuite) Test_CheckCreds() {
 	addTestUserReq := "INSERT " +
 		"INTO users (login, password) " +
 		"VALUES ('user1','$2a$10$5h6GDvR0EBtCECFgptg6iuiOu0jkc/qJ8if9jt39NY9ir602nOcXu');"
 	var err error
-	_, err = suite.testRepo.pool.Exec(context.Background(), addTestUserReq)
+	_, err = s.testRepo.pool.Exec(context.Background(), addTestUserReq)
 	if err != nil {
-		suite.Error(err)
+		s.Error(err)
 		return
 	}
 	type args struct {
@@ -453,26 +433,27 @@ func (suite *UsersTestSuite) Test_CheckCreds() {
 			want: false,
 		},
 	}
-	for _, tt := range tests {
-		suite.Run(tt.name, func() {
-			got := suite.testRepo.CheckCreds(tt.args.ctx, tt.args.user)
+	for i := range tests {
+		tt := tests[i]
+		s.Run(tt.name, func() {
+			got := s.testRepo.CheckCreds(tt.args.ctx, tt.args.user)
 			fmt.Printf("GOT %v", got)
 			if got != tt.want {
 				fmt.Printf("CheckCreds() = %v, want %v", got, tt.want)
-				suite.Fail("test failed")
+				s.Fail("test failed")
 			}
 		})
 	}
 }
 
-func (suite *UsersTestSuite) Test_GetUserID() {
+func (s *UsersTestSuite) Test_GetUserID() {
 	addTestUserReq := "INSERT " +
 		"INTO users (login, password) " +
 		"VALUES ('user1','$2a$10$5h6GDvR0EBtCECFgptg6iuiOu0jkc/qJ8if9jt39NY9ir602nOcXu');"
 	var err error
-	_, err = suite.testRepo.pool.Exec(context.Background(), addTestUserReq)
+	_, err = s.testRepo.pool.Exec(context.Background(), addTestUserReq)
 	if err != nil {
-		suite.Error(err)
+		s.Error(err)
 		return
 	}
 	type args struct {
@@ -508,23 +489,24 @@ func (suite *UsersTestSuite) Test_GetUserID() {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
-		suite.Run(tt.name, func() {
-			got, err := suite.testRepo.GetUserID(tt.args.ctx, tt.args.user.Login)
+	for i := range tests {
+		tt := tests[i]
+		s.Run(tt.name, func() {
+			got, err := s.testRepo.GetUserID(tt.args.ctx, tt.args.user.Login)
 			if (err != nil) != tt.wantErr {
 				fmt.Printf("GetUserID() error = %v, wantErr %v", err, tt.wantErr)
-				suite.Fail("test failed")
+				s.Fail("test failed")
 				return
 			}
 			if got != tt.want {
 				fmt.Printf("GetUserID() got = %v, want %v", got, tt.want)
-				suite.Fail("test failed")
+				s.Fail("test failed")
 			}
 		})
 	}
 }
 
-func (suite *UsersTestSuite) Test_GetRoleByID() {
+func (s *UsersTestSuite) Test_GetRoleByID() {
 	type args struct {
 		ctx context.Context
 	}
@@ -554,17 +536,18 @@ func (suite *UsersTestSuite) Test_GetRoleByID() {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
-		suite.Run(tt.name, func() {
-			got, err := suite.testRepo.GetRoleByID(tt.args.ctx, tt.roleID)
+	for i := range tests {
+		tt := tests[i]
+		s.Run(tt.name, func() {
+			got, err := s.testRepo.GetRoleByID(tt.args.ctx, tt.roleID)
 			if (err != nil) != tt.wantErr {
 				fmt.Printf("GetRoleByID() error = %v, wantErr %v", err, tt.wantErr)
-				suite.Fail("test failed")
+				s.Fail("test failed")
 				return
 			}
 			if got != tt.want {
 				fmt.Printf("GetRoleByID() got = %v, want %v", got, tt.want)
-				suite.Fail("test failed")
+				s.Fail("test failed")
 			}
 		})
 	}
