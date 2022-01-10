@@ -14,6 +14,7 @@ type ProductTestSuite struct {
 	suite.Suite
 	testRepo  productRepo
 	productID string
+	Data      TestData
 }
 
 func Test_ProductSuite(t *testing.T) {
@@ -29,111 +30,39 @@ func (s *ProductTestSuite) SetupTest() {
 		s.Fail("setup failed", err)
 		return
 	}
-
+	s.Data, err = loadTestDataFromYaml("products_test.yaml")
+	if err != nil {
+		s.Error(err)
+		s.Fail("setup failed")
+		return
+	}
 	createExtensionReq := "CREATE EXTENSION pgcrypto;"
 	_, err = s.testRepo.pool.Exec(context.Background(), createExtensionReq)
 	if err != nil {
 		fmt.Println("pgcrypto failed: createExtensionReq", err)
 	}
-	createTableProductsReq := "CREATE " +
-		"TABLE products ( " +
-		"id          UUID DEFAULT gen_random_uuid() PRIMARY KEY, " +
-		"sku         TEXT NOT NULL, " +
-		"name        TEXT NOT NULL, " +
-		"uri         TEXT NOT NULL, " +
-		"description TEXT NOT NULL, " +
-		"is_active       BOOL NOT NULL, " +
-		"created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
-		"updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);"
-	_, err = s.testRepo.pool.Exec(context.Background(), createTableProductsReq)
-	if err != nil {
-		s.Fail("setup failed: createTableProductsReq", err)
-		return
+	for i, r := range s.Data.Conf.Setup.Requests {
+		_, err = s.testRepo.pool.Exec(context.Background(), r.Request)
+		if err != nil {
+			s.Error(err)
+			return
+		}
+		if i == 6 {
+			break
+		}
 	}
-
-	addProductReq := "INSERT " +
-		"INTO products (sku, name, uri, description, is_active) " +
-		"VALUES ('3001', 'пушка', '/product/тепловая-3001', 'пушка детская', true) RETURNING id;"
-	err = s.testRepo.pool.QueryRow(context.Background(), addProductReq).Scan(&s.productID)
+	err = s.testRepo.pool.QueryRow(context.Background(), s.Data.Conf.Setup.Requests[7].Request).Scan(&s.productID)
 	if err != nil {
 		s.Fail("setup failed: addProductReq", err)
 		return
 	}
-	createTableCategoriesReq := "CREATE " +
-		"TABLE categories ( " +
-		"id BIGSERIAL PRIMARY KEY, " +
-		"name TEXT NOT NULL UNIQUE, " +
-		"uri_name TEXT UNIQUE, " +
-		"created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
-		"updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);"
-	_, err = s.testRepo.pool.Exec(context.Background(), createTableCategoriesReq)
-	if err != nil {
-		s.Fail("setup failed", err)
-		return
-	}
-
-	addCategoriesReq := "INSERT " +
-		"INTO categories (name, uri_name) " +
-		"VALUES ('Стройматериалы', 'Стройматериалы-1'), " +
-		"('Игрушки', 'Игрушки-2');"
-
-	_, err = s.testRepo.pool.Exec(context.Background(), addCategoriesReq)
-	if err != nil {
-		s.Fail("setup failed", err)
-		return
-	}
-	createTableProductCategoryReq := "CREATE " +
-		"TABLE productcategory ( " +
-		"category_id  BIGINT NOT NULL REFERENCES categories, " +
-		"product_id UUID NOT NULL REFERENCES products, " +
-		"PRIMARY KEY (category_id, product_id));"
-	_, err = s.testRepo.pool.Exec(context.Background(), createTableProductCategoryReq)
-	if err != nil {
-		s.Fail("setup failed", err)
-		return
-	}
-	addProductCategoryReq := fmt.Sprintf("INSERT INTO productcategory (category_id, product_id) VALUES (1, '%s');", s.productID)
+	addProductCategoryReq := fmt.Sprintf(s.Data.Conf.Setup.Requests[8].Request, s.productID)
 	_, err = s.testRepo.pool.Exec(context.Background(), addProductCategoryReq)
 	if err != nil {
 		s.Fail("setup failed", err)
 		return
 	}
-	createTableShopsReq := "CREATE " +
-		"TABLE shops ( " +
-		"id              BIGSERIAL PRIMARY KEY, " +
-		"name            TEXT NOT NULL, " +
-		"address         TEXT NOT NULL, " +
-		"lon             TEXT, " +
-		"lat             TEXT, " +
-		"working_hours   TEXT, " +
-		"created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
-		"updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);"
-	_, err = s.testRepo.pool.Exec(context.Background(), createTableShopsReq)
-	if err != nil {
-		s.Fail("setup failed", err)
-		return
-	}
-	addShopReq := "INSERT " +
-		"INTO shops (name, address, lon, lat, working_hours) " +
-		"VALUES ('Магазин на диване', 'Москва, Останкино', '324234' , '5465476', '8 - 20'), " +
-		"('Магазин для взрослых', 'Ростов, кремль', '12334' , '5465476', '8 - 20');"
-	_, err = s.testRepo.pool.Exec(context.Background(), addShopReq)
-	if err != nil {
-		s.Fail("setup failed", err)
-		return
-	}
-
-	createTableProductShopReq := "CREATE " +
-		"TABLE productshop ( " +
-		"shop_id BIGINT NOT NULL REFERENCES shops, " +
-		"product_id UUID NOT NULL REFERENCES products, " +
-		"PRIMARY KEY (shop_id, product_id));"
-	_, err = s.testRepo.pool.Exec(context.Background(), createTableProductShopReq)
-	if err != nil {
-		s.Fail("setup failed", err)
-		return
-	}
-	addProductShopReq := fmt.Sprintf("INSERT INTO productshop (shop_id, product_id) VALUES (1, '%s');", s.productID)
+	addProductShopReq := fmt.Sprintf(s.Data.Conf.Setup.Requests[9].Request, s.productID)
 	_, err = s.testRepo.pool.Exec(context.Background(), addProductShopReq)
 	if err != nil {
 		s.Fail("setup failed", err)
@@ -144,11 +73,12 @@ func (s *ProductTestSuite) SetupTest() {
 func (s *ProductTestSuite) TearDownTest() {
 	fmt.Println("cleaning up")
 	var err error
-	_, err = s.testRepo.pool.Exec(context.Background(),
-		"DROP TABLE products, categories, shops, productshop, productcategory CASCADE;")
-	if err != nil {
-		s.Error(err)
-		s.Fail("cleaning failed")
+	for _, r := range s.Data.Conf.Teardown.Requests {
+		_, err = s.testRepo.pool.Exec(context.Background(), r.Request)
+		if err != nil {
+			s.Error(err)
+			s.Fail("cleaning failed")
+		}
 	}
 }
 

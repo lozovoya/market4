@@ -1,0 +1,36 @@
+conf:
+  setup:
+    requests:
+      - request: CREATE
+                 TABLE products (
+                    id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+                    sku         TEXT NOT NULL,
+                    name        TEXT NOT NULL,
+                    uri         TEXT NOT NULL,
+                    description TEXT NOT NULL,
+                    is_active       BOOL NOT NULL,
+                    created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                 );
+      - request: CREATE
+                 TABLE prices (
+                    id BIGSERIAL PRIMARY KEY,
+                    sale_price      INTEGER NOT NULL,
+                    factory_price   INTEGER NOT NULL,
+                    discount_price  INTEGER NOT NULL,
+                    product_id      UUID REFERENCES products,
+                    is_active       BOOL NOT NULL,
+                    created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                 );
+      - request: INSERT
+                 INTO products (sku, name, uri, description, is_active)
+                 VALUES ('3001', 'пушка', '/product/тепловая-3001', 'пушка детская', true)
+                 RETURNING id;
+      - request: INSERT
+                 INTO prices (sale_price, factory_price, discount_price, product_id, is_active)
+                 VALUES (2000, 1000, 1600, '%s', true);
+  teardown:
+    requests:
+      - request: DROP TABLE prices, products CASCADE;
+

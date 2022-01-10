@@ -1,0 +1,63 @@
+conf:
+  setup:
+    requests:
+      - request: CREATE
+                 TABLE products (
+                    id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+                    sku         TEXT NOT NULL,
+                    name        TEXT NOT NULL,
+                    uri         TEXT NOT NULL,
+                    description TEXT NOT NULL,
+                    is_active       BOOL NOT NULL,
+                    created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                 );
+      - request: CREATE
+                 TABLE categories (
+                    id BIGSERIAL PRIMARY KEY,
+                    name TEXT NOT NULL UNIQUE,
+                    uri_name TEXT UNIQUE,
+                    created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                 );
+      - request: INSERT
+                 INTO categories (name, uri_name)
+                 VALUES ('Стройматериалы', 'Стройматериалы-1'), ('Игрушки', 'Игрушки-2');
+      - request: CREATE
+                 TABLE productcategory (
+                    category_id  BIGINT NOT NULL REFERENCES categories,
+                    product_id UUID NOT NULL REFERENCES products,
+                    PRIMARY KEY (category_id, product_id));
+      - request: CREATE
+                 TABLE shops (
+                    id              BIGSERIAL PRIMARY KEY,
+                    name            TEXT NOT NULL,
+                    address         TEXT NOT NULL,
+                    lon             TEXT,
+                    lat             TEXT,
+                    working_hours   TEXT,
+                    created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);
+      - request: INSERT
+                 INTO shops (name, address, lon, lat, working_hours)
+                 VALUES ('Магазин на диване', 'Москва, Останкино', '324234' , '5465476', '8 - 20'),
+                        ('Магазин для взрослых', 'Ростов, кремль', '12334' , '5465476', '8 - 20');
+      - request: CREATE
+                 TABLE productshop (
+                    shop_id BIGINT NOT NULL REFERENCES shops,
+                    product_id UUID NOT NULL REFERENCES products,
+                    PRIMARY KEY (shop_id, product_id));
+      - request: INSERT
+                 INTO products (sku, name, uri, description, is_active)
+                 VALUES ('3001', 'пушка', '/product/тепловая-3001', 'пушка детская', true)
+                 RETURNING id;
+      - request: INSERT
+                 INTO productcategory (category_id, product_id)
+                 VALUES (1, '%s');
+      - request: INSERT
+                 INTO productshop (shop_id, product_id)
+                 VALUES (1, '%s');
+  teardown:
+    requests:
+      - request: DROP TABLE products, categories, shops, productshop, productcategory CASCADE;;
+

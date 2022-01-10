@@ -13,6 +13,7 @@ import (
 type CategoriesTestSuite struct {
 	suite.Suite
 	testRepo categoryRepo
+	Data     TestData
 }
 
 func Test_CategoriesSuite(t *testing.T) {
@@ -28,40 +29,30 @@ func (s *CategoriesTestSuite) SetupTest() {
 		s.Fail("setup failed")
 		return
 	}
-	createTableCategoriesReq := "CREATE " +
-		"TABLE categories ( " +
-		"id BIGSERIAL PRIMARY KEY, " +
-		"name TEXT NOT NULL UNIQUE, " +
-		"uri_name TEXT UNIQUE, " +
-		"created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
-		"updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);"
-	_, err = s.testRepo.pool.Exec(context.Background(), createTableCategoriesReq)
+	s.Data, err = loadTestDataFromYaml("categories_test.yaml")
 	if err != nil {
 		s.Error(err)
 		s.Fail("setup failed")
 		return
 	}
-
-	addCategoriesReq := "INSERT " +
-		"INTO categories (name, uri_name) " +
-		"VALUES ('Стройматериалы', 'Стройматериалы-1'), " +
-		"('Игрушки', 'Игрушки-2');"
-
-	_, err = s.testRepo.pool.Exec(context.Background(), addCategoriesReq)
-	if err != nil {
-		s.Error(err)
-		s.Fail("setup failed")
-		return
+	for _, r := range s.Data.Conf.Setup.Requests {
+		_, err = s.testRepo.pool.Exec(context.Background(), r.Request)
+		if err != nil {
+			s.Error(err)
+			return
+		}
 	}
 }
 
 func (s *CategoriesTestSuite) TearDownTest() {
 	fmt.Println("cleaning up")
 	var err error
-	_, err = s.testRepo.pool.Exec(context.Background(), "DROP TABLE categories CASCADE;")
-	if err != nil {
-		s.Error(err)
-		s.Fail("cleaning failed")
+	for _, r := range s.Data.Conf.Teardown.Requests {
+		_, err = s.testRepo.pool.Exec(context.Background(), r.Request)
+		if err != nil {
+			s.Error(err)
+			s.Fail("cleaning failed")
+		}
 	}
 }
 

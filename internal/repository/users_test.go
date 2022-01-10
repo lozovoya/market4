@@ -14,6 +14,7 @@ import (
 type UsersTestSuite struct {
 	suite.Suite
 	testRepo usersRepo
+	Data     TestData
 }
 
 const (
@@ -29,57 +30,30 @@ func (s *UsersTestSuite) SetupTest() {
 		s.Fail("setup failed")
 		return
 	}
-	createTableUsersReq := "CREATE " +
-		"TABLE users ( " +
-		"id BIGSERIAL PRIMARY KEY, " +
-		"login TEXT NOT NULL UNIQUE, " +
-		"password TEXT NOT NULL);"
-	_, err = s.testRepo.pool.Exec(context.Background(), createTableUsersReq)
+	s.Data, err = loadTestDataFromYaml("users_test.yaml")
 	if err != nil {
 		s.Error(err)
 		s.Fail("setup failed")
 		return
 	}
-	createTableRolesReq := "CREATE " +
-		"TABLE roles ( " +
-		"id BIGSERIAL PRIMARY KEY, " +
-		"name TEXT NOT NULL UNIQUE);"
-	_, err = s.testRepo.pool.Exec(context.Background(), createTableRolesReq)
-	if err != nil {
-		s.Error(err)
-		s.Fail("setup failed")
-		return
-	}
-	createTableUserRolesReq := "CREATE " +
-		"TABLE userroles ( " +
-		"user_id BIGINT NOT NULL REFERENCES users, " +
-		"role_id BIGINT NOT NULL REFERENCES roles, " +
-		"PRIMARY KEY (user_id, role_id));"
-
-	_, err = s.testRepo.pool.Exec(context.Background(), createTableUserRolesReq)
-	if err != nil {
-		s.Error(err)
-		s.Fail("setup failed")
-		return
-	}
-	addRolesReq := "INSERT " +
-		"INTO roles (name) " +
-		"VALUES ('USER'), ('ADMIN');"
-
-	_, err = s.testRepo.pool.Exec(context.Background(), addRolesReq)
-	if err != nil {
-		s.Error(err)
-		s.Fail("setup failed")
-		return
+	for _, r := range s.Data.Conf.Setup.Requests {
+		_, err = s.testRepo.pool.Exec(context.Background(), r.Request)
+		if err != nil {
+			s.Error(err)
+			return
+		}
 	}
 }
 
 func (s *UsersTestSuite) TearDownTest() {
 	fmt.Println("cleaning up")
 	var err error
-	_, err = s.testRepo.pool.Exec(context.Background(), "DROP TABLE userroles, roles, users CASCADE;")
-	if err != nil {
-		s.Error(err)
+	for _, r := range s.Data.Conf.Teardown.Requests {
+		_, err = s.testRepo.pool.Exec(context.Background(), r.Request)
+		if err != nil {
+			s.Error(err)
+			s.Fail("cleaning failed")
+		}
 	}
 }
 

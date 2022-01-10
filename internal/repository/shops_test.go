@@ -3,13 +3,11 @@ package repository
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"market4/internal/model"
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stretchr/testify/suite"
-	"gopkg.in/yaml.v2"
 )
 
 type ShopsTestSuite struct {
@@ -27,14 +25,7 @@ func (s *ShopsTestSuite) SetupTest() {
 		s.Fail("setup failed")
 		return
 	}
-	buf, err := ioutil.ReadFile("shops_test.yaml")
-	if err != nil {
-		s.Error(err)
-		s.Fail("setup failed")
-		return
-	}
-
-	err = yaml.Unmarshal(buf, &s.Data)
+	s.Data, err = loadTestDataFromYaml("shops_test.yaml")
 	if err != nil {
 		s.Error(err)
 		s.Fail("setup failed")
@@ -56,6 +47,7 @@ func (s *ShopsTestSuite) TearDownTest() {
 		_, err = s.testRepo.pool.Exec(context.Background(), r.Request)
 		if err != nil {
 			s.Error(err)
+			s.Fail("cleaning failed")
 		}
 	}
 }

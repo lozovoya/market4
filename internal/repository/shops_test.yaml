@@ -10,7 +10,8 @@ conf:
                     lat TEXT,
                     working_hours   TEXT,
                     created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);
+                    updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    );
       - request: INSERT
                  INTO shops (name, address, lon, lat, working_hours)
                  VALUES ('Магазин на диване', 'Москва, Останкино', '324234' , '5465476', '8 - 20');

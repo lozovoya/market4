@@ -14,6 +14,7 @@ type PricesTestSuite struct {
 	suite.Suite
 	testRepo  priceRepo
 	productID string
+	Data      TestData
 }
 
 func Test_PricesSuite(t *testing.T) {
@@ -29,55 +30,28 @@ func (s *PricesTestSuite) SetupTest() {
 		s.Fail("setup failed")
 		return
 	}
-
-	createTableProductsReq := "CREATE " +
-		"TABLE products ( " +
-		"id          UUID DEFAULT gen_random_uuid() PRIMARY KEY, " +
-		"sku         TEXT NOT NULL, " +
-		"name        TEXT NOT NULL, " +
-		"uri         TEXT NOT NULL, " +
-		"description TEXT NOT NULL, " +
-		"is_active       BOOL NOT NULL, " +
-		"created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
-		"updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);"
-	_, err = s.testRepo.pool.Exec(context.Background(), createTableProductsReq)
+	s.Data, err = loadTestDataFromYaml("prices_test.yaml")
 	if err != nil {
 		s.Error(err)
-		s.Fail("setup failed: createTableProductsReq")
+		s.Fail("setup failed")
 		return
 	}
-
-	createTablePricesReq := "CREATE " +
-		"TABLE prices ( " +
-		"id BIGSERIAL PRIMARY KEY, " +
-		"sale_price      INTEGER NOT NULL, " +
-		"factory_price   INTEGER NOT NULL, " +
-		"discount_price  INTEGER NOT NULL, " +
-		"product_id      UUID REFERENCES products, " +
-		"is_active       BOOL NOT NULL, " +
-		"created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
-		"updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);"
-	_, err = s.testRepo.pool.Exec(context.Background(), createTablePricesReq)
+	for i, r := range s.Data.Conf.Setup.Requests {
+		_, err = s.testRepo.pool.Exec(context.Background(), r.Request)
+		if err != nil {
+			s.Error(err)
+			return
+		}
+		if i == 1 {
+			break
+		}
+	}
+	err = s.testRepo.pool.QueryRow(context.Background(), s.Data.Conf.Setup.Requests[2].Request).Scan(&s.productID)
 	if err != nil {
 		s.Error(err)
-		s.Fail("setup failed: createTablePricesReq")
 		return
 	}
-
-	addProductReq := "INSERT " +
-		"INTO products (sku, name, uri, description, is_active) " +
-		"VALUES ('3001', 'пушка', '/product/тепловая-3001', 'пушка детская', true) RETURNING id;"
-
-	err = s.testRepo.pool.QueryRow(context.Background(), addProductReq).Scan(&s.productID)
-	if err != nil {
-		s.Fail("setup failed: addProductReq", err)
-		return
-	}
-	addPriceReq := fmt.Sprintf(`
-						INSERT 
-						INTO prices (sale_price, factory_price, discount_price, product_id, is_active) 
-						VALUES (2000, 1000, 1600, '%s', true);
-	`, s.productID)
+	addPriceReq := fmt.Sprintf(s.Data.Conf.Setup.Requests[3].Request, s.productID)
 	_, err = s.testRepo.pool.Exec(context.Background(), addPriceReq)
 	if err != nil {
 		s.Error(err)
@@ -89,10 +63,12 @@ func (s *PricesTestSuite) SetupTest() {
 func (s *PricesTestSuite) TearDownTest() {
 	fmt.Println("cleaning up")
 	var err error
-	_, err = s.testRepo.pool.Exec(context.Background(), "DROP TABLE prices, products CASCADE;")
-	if err != nil {
-		s.Error(err)
-		s.Fail("cleaning failed")
+	for _, r := range s.Data.Conf.Teardown.Requests {
+		_, err = s.testRepo.pool.Exec(context.Background(), r.Request)
+		if err != nil {
+			s.Error(err)
+			s.Fail("cleaning failed")
+		}
 	}
 }
 
