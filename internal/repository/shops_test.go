@@ -3,16 +3,19 @@ package repository
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"market4/internal/model"
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stretchr/testify/suite"
+	"gopkg.in/yaml.v2"
 )
 
 type ShopsTestSuite struct {
 	suite.Suite
 	testRepo shopRepo
+	Data     TestData
 }
 
 func (s *ShopsTestSuite) SetupTest() {
@@ -24,38 +27,36 @@ func (s *ShopsTestSuite) SetupTest() {
 		s.Fail("setup failed")
 		return
 	}
-	createTableShopsReq := "CREATE TABLE shops ( " +
-		"id  BIGSERIAL PRIMARY KEY, " +
-		"name TEXT NOT NULL, " +
-		"address TEXT NOT NULL, " +
-		"lon TEXT, " +
-		"lat TEXT, " +
-		"working_hours   TEXT, " +
-		"created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
-		"updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);"
-	_, err = s.testRepo.pool.Exec(context.Background(), createTableShopsReq)
+	buf, err := ioutil.ReadFile("shops_test.yaml")
 	if err != nil {
 		s.Error(err)
+		s.Fail("setup failed")
 		return
 	}
 
-	addShopReq := "INSERT " +
-		"INTO shops (name, address, lon, lat, working_hours) " +
-		"VALUES ('Магазин на диване', 'Москва, Останкино', '324234' , '5465476', '8 - 20');"
-
-	_, err = s.testRepo.pool.Exec(context.Background(), addShopReq)
+	err = yaml.Unmarshal(buf, &s.Data)
 	if err != nil {
 		s.Error(err)
+		s.Fail("setup failed")
 		return
+	}
+	for _, r := range s.Data.Conf.Setup.Requests {
+		_, err = s.testRepo.pool.Exec(context.Background(), r.Request)
+		if err != nil {
+			s.Error(err)
+			return
+		}
 	}
 }
 
 func (s *ShopsTestSuite) TearDownTest() {
 	fmt.Println("cleaning up")
 	var err error
-	_, err = s.testRepo.pool.Exec(context.Background(), "DROP TABLE shops CASCADE;")
-	if err != nil {
-		s.Error(err)
+	for _, r := range s.Data.Conf.Teardown.Requests {
+		_, err = s.testRepo.pool.Exec(context.Background(), r.Request)
+		if err != nil {
+			s.Error(err)
+		}
 	}
 }
 
