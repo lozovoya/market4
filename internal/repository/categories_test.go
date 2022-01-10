@@ -3,10 +3,11 @@ package repository
 import (
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stretchr/testify/suite"
 	"market4/internal/model"
 	"testing"
+
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stretchr/testify/suite"
 )
 
 type CategoriesTestSuite struct {
@@ -18,13 +19,13 @@ func Test_CategoriesSuite(t *testing.T) {
 	suite.Run(t, new(CategoriesTestSuite))
 }
 
-func (suite *CategoriesTestSuite) SetupTest() {
+func (s *CategoriesTestSuite) SetupTest() {
 	fmt.Println("start setup")
 	var err error
-	suite.testRepo.pool, err = pgxpool.Connect(context.Background(), testDSN)
+	s.testRepo.pool, err = pgxpool.Connect(context.Background(), testDSN)
 	if err != nil {
-		suite.Error(err)
-		suite.Fail("setup failed")
+		s.Error(err)
+		s.Fail("setup failed")
 		return
 	}
 	createTableCategoriesReq := "CREATE " +
@@ -34,10 +35,10 @@ func (suite *CategoriesTestSuite) SetupTest() {
 		"uri_name TEXT UNIQUE, " +
 		"created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
 		"updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);"
-	_, err = suite.testRepo.pool.Exec(context.Background(), createTableCategoriesReq)
+	_, err = s.testRepo.pool.Exec(context.Background(), createTableCategoriesReq)
 	if err != nil {
-		suite.Error(err)
-		suite.Fail("setup failed")
+		s.Error(err)
+		s.Fail("setup failed")
 		return
 	}
 
@@ -46,25 +47,25 @@ func (suite *CategoriesTestSuite) SetupTest() {
 		"VALUES ('Стройматериалы', 'Стройматериалы-1'), " +
 		"('Игрушки', 'Игрушки-2');"
 
-	_, err = suite.testRepo.pool.Exec(context.Background(), addCategoriesReq)
+	_, err = s.testRepo.pool.Exec(context.Background(), addCategoriesReq)
 	if err != nil {
-		suite.Error(err)
-		suite.Fail("setup failed")
+		s.Error(err)
+		s.Fail("setup failed")
 		return
 	}
 }
 
-func (suite *CategoriesTestSuite) TearDownTest() {
+func (s *CategoriesTestSuite) TearDownTest() {
 	fmt.Println("cleaning up")
 	var err error
-	_, err = suite.testRepo.pool.Exec(context.Background(), "DROP TABLE categories CASCADE;")
+	_, err = s.testRepo.pool.Exec(context.Background(), "DROP TABLE categories CASCADE;")
 	if err != nil {
-		suite.Error(err)
-		suite.Fail("cleaning failed")
+		s.Error(err)
+		s.Fail("cleaning failed")
 	}
 }
 
-func (suite *CategoriesTestSuite) Test_categoryRepo_IfCategoryExists() {
+func (s *CategoriesTestSuite) Test_categoryRepo_IfCategoryExists() {
 	type args struct {
 		ctx      context.Context
 		category int
@@ -93,17 +94,17 @@ func (suite *CategoriesTestSuite) Test_categoryRepo_IfCategoryExists() {
 	}
 	for i := range tests {
 		tt := tests[i]
-		suite.Run(tt.name, func() {
-			got := suite.testRepo.IfCategoryExists(tt.args.ctx, tt.args.category)
+		s.Run(tt.name, func() {
+			got := s.testRepo.IfCategoryExists(tt.args.ctx, tt.args.category)
 			if got != tt.want {
 				fmt.Printf("IfCategoryExists() = %v, want %v", got, tt.want)
-				suite.Fail("test failed")
+				s.Fail("test failed")
 			}
 		})
 	}
 }
 
-func (suite *CategoriesTestSuite) Test_categoryRepo_ListAllCategories() {
+func (s *CategoriesTestSuite) Test_categoryRepo_ListAllCategories() {
 	type args struct {
 		ctx context.Context
 	}
@@ -135,22 +136,22 @@ func (suite *CategoriesTestSuite) Test_categoryRepo_ListAllCategories() {
 	}
 	for i := range tests {
 		tt := tests[i]
-		suite.Run(tt.name, func() {
-			got, err := suite.testRepo.ListAllCategories(tt.args.ctx)
+		s.Run(tt.name, func() {
+			got, err := s.testRepo.ListAllCategories(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
 				fmt.Printf("ListAllCategories() error = %v, wantErr %v", err, tt.wantErr)
-				suite.Fail("test ListAllCategories failed")
+				s.Fail("test ListAllCategories failed")
 				return
 			}
-			if !suite.Equal(tt.want, got) {
+			if !s.Equal(tt.want, got) {
 				fmt.Printf("ListAllCategories() got = %v, want %v", got, tt.want)
-				suite.Fail("test ListAllCategories failed")
+				s.Fail("test ListAllCategories failed")
 			}
 		})
 	}
 }
 
-func (suite *CategoriesTestSuite) Test_categoryRepo_AddCategory() {
+func (s *CategoriesTestSuite) Test_categoryRepo_AddCategory() {
 	type args struct {
 		ctx      context.Context
 		category *model.Category
@@ -186,22 +187,22 @@ func (suite *CategoriesTestSuite) Test_categoryRepo_AddCategory() {
 	}
 	for i := range tests {
 		tt := tests[i]
-		suite.Run(tt.name, func() {
-			got, err := suite.testRepo.AddCategory(tt.args.ctx, tt.args.category)
+		s.Run(tt.name, func() {
+			got, err := s.testRepo.AddCategory(tt.args.ctx, tt.args.category)
 			if (err != nil) != tt.wantErr {
 				fmt.Printf("AddCategory() error = %v, wantErr %v", err, tt.wantErr)
-				suite.Fail("test AddCategory failed")
+				s.Fail("test AddCategory failed")
 				return
 			}
 			if got != tt.want {
 				fmt.Printf("AddCategory() got = %v, want %v", got, tt.want)
-				suite.Fail("test AddCategory failed")
+				s.Fail("test AddCategory failed")
 			}
 		})
 	}
 }
 
-func (suite *CategoriesTestSuite) Test_categoryRepo_EditCategory() {
+func (s *CategoriesTestSuite) Test_categoryRepo_EditCategory() {
 	type args struct {
 		ctx      context.Context
 		category *model.Category
@@ -236,13 +237,13 @@ func (suite *CategoriesTestSuite) Test_categoryRepo_EditCategory() {
 	}
 	for i := range tests {
 		tt := tests[i]
-		suite.Run(tt.name, func() {
-			err := suite.testRepo.EditCategory(tt.args.ctx, tt.args.category)
+		s.Run(tt.name, func() {
+			err := s.testRepo.EditCategory(tt.args.ctx, tt.args.category)
 			fmt.Printf("GOT: %v", err)
 			if err != nil {
 				if tt.wantErr == false {
 					fmt.Printf("EditCategory() error = %v, wantErr %v", err, tt.wantErr)
-					suite.Fail("test EditCategory failed")
+					s.Fail("test EditCategory failed")
 					return
 				}
 			}

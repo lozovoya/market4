@@ -102,19 +102,18 @@ func (u *Users) EditUser(writer http.ResponseWriter, request *http.Request) {
 
 func (u *Users) AddRole(writer http.ResponseWriter, request *http.Request) {
 	var data *model.User
-
-	data = u.Decode(writer, request)
-	//err := json.NewDecoder(request.Body).Decode(&data)
-	//if err != nil {
-	//	u.lg.Error("AddRole", zap.Error(err))
-	//	err = u.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
-	//	if err != nil {
-	//		u.lg.Error("Auth", zap.Error(err))
-	//	}
-	//	return
-	//}
-	err := checkMandatoryFields(data.Login, data.Role)
-	if IsEmpty(data.Login) || IsEmpty(data.Role) {
+	err := json.NewDecoder(request.Body).Decode(&data)
+	if err != nil {
+		u.lg.Error("AddRole", zap.Error(err))
+		err = u.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
+		if err != nil {
+			u.lg.Error("Auth", zap.Error(err))
+		}
+		return
+	}
+	err = checkMandatoryFields(data.Login, data.Role)
+	// if IsEmpty(data.Login) || IsEmpty(data.Role) {
+	if err != nil {
 		u.lg.Error("AddRole: field is empty")
 		err = u.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
 		if err != nil {
@@ -163,19 +162,4 @@ func (u *Users) RemoveRole(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	writer.WriteHeader(http.StatusOK)
-}
-
-func (u *Users) Decode(writer http.ResponseWriter, request *http.Request) *model.User {
-	var data *model.User
-
-	err := json.NewDecoder(request.Body).Decode(data)
-	if err != nil {
-		u.lg.Error("Decode", zap.Error(err))
-		err = u.renderer.JSON(writer, http.StatusBadRequest, map[string]string{"Error": "BadRequest"})
-		if err != nil {
-			u.lg.Error("Decode/Renderer", zap.Error(err))
-		}
-		return nil
-	}
-	return data
 }

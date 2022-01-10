@@ -1,10 +1,11 @@
 package httpserver
 
 import (
-	"go.uber.org/zap"
 	"market4/internal/api/httpserver/md"
 	v1 "market4/internal/api/v1"
 	"market4/internal/model"
+
+	"go.uber.org/zap"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"

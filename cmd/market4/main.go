@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"github.com/unrolled/render"
-	"go.uber.org/zap"
 	"log"
 	"market4/internal/api/auth"
 	"market4/internal/api/httpserver"
@@ -13,6 +11,9 @@ import (
 	"net"
 	"net/http"
 	"os"
+
+	"github.com/unrolled/render"
+	"go.uber.org/zap"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v4/pgxpool"

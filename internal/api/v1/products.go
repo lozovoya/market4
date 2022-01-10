@@ -2,14 +2,15 @@ package v1
 
 import (
 	"encoding/json"
-	"github.com/unrolled/render"
-	"go.uber.org/zap"
 	"market4/internal/cache"
 	"market4/internal/model"
 	"market4/internal/repository"
 	"market4/internal/views"
 	"net/http"
 	"strconv"
+
+	"github.com/unrolled/render"
+	"go.uber.org/zap"
 
 	"github.com/go-chi/chi/v5"
 )
